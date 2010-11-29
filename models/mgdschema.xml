@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Schema xmlns="http://www.midgard-project.org/repligard/1.4">
+    <type name="com_meego_package" table="com_meego_package" parent="com_meego_repository">
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes" />
+        <property name="name" type="string" index="yes" />
+        <property name="title" type="string" index="yes" />
+        <property name="repository" type="unsigned integer" link="com_meego_repository:id" parentfield="repository" />
+        <property name="version" type="string" index="yes" />
+        <property name="summary" type="text" />
+        <property name="description" type="text" />
+        <property name="group" type="string" index="yes">
+            <description>Package category, e.g. applications/internet</description>
+        </property>
+        <property name="license" type="string">
+            <description>Package license, e.g. GPLv2+</description>
+        </property>
+        <property name="url" type="string" />
+        <property name="bugtracker" type="string" />
+        <!-- Missing: requires, buildrequires, provides, obsoletes -->
+    </type>
+
+    <type name="com_meego_package_relation" table="com_meego_package_relation" parent="com_meego_package">
+        <property name="from" type="unsigned integer" link="com_meego_package:id" parentfield="from" />
+        <property name="relation" type="string" index="yes">
+            <!-- TODO: enum -->
+            <description>Relation between packages, for example requires, buildrequires, obsoletes, suggests</description>
+        </property>
+        <property name="group" type="string" required="yes">
+            <description>In case of OR dependencies, the name of the dependency group the relation belongs to</description>
+        </property>
+        <property name="to" type="unsigned integer" link="com_meego_package:id">
+            <description>Relation to package if it is in database</description>
+        </property>
+        <property name="toname" type="string" required="yes">
+            <description>Relation to package name, regardless if package is in database</description>
+        </property>
+        <property name="version" type="string" index="yes" />
+        <property name="constraint" type="string" dbtype="string(2)" index="yes" />
+    </type>
+
+    <type name="com_meego_repository" table="com_meego_repository">
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="name" type="string" index="yes">
+            <description>Name for the repository, to be used in urls</description>
+        </property>
+        <property name="title" type="string">
+            <description>Pretty name for the repository</description>
+        </property>
+        <property name="arch" type="string">
+            <description>Arch, eg armel</description>
+        </property>
+        <property name="url" type="string" />
+        <property name="disabledownload" type="bool">
+            <description>Disable direct downloads for this repository</description>
+        </property>
+    </type>
+
+    <type name="com_meego_repository_debian" extends="com_meego_repository">
+        <property name="suite" type="string">
+            <description>Suite, eg diablo</description>
+        </property>
+        <property name="dist" type="string">
+            <description>Dist, eg extras-devel</description>
+        </property>
+        <property name="component" type="string">
+            <description>Component, eg free</description>
+        </property>
+    </type>
+</Schema>
