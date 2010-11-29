@@ -1,8 +1,6 @@
 <?php
 
-namespace com\meego\obsconnector;
-
-class HTTP
+class com_meego_obsconnector_HTTP
 {
     private $prefix = null;
     private $protocol = 'http';

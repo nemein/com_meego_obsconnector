@@ -1,15 +1,13 @@
 <?php
 
-require __DIR__.'/api.php';
+require dirname(__FILE__).'/api.php';
 
-use com\meego\obsconnector as obs;
-
-if (!file_exists(__DIR__.'/config.ini')) {
+if (!file_exists(dirname(__FILE__).'/config.ini')) {
     throw new RuntimeException('Please create config.ini file with "login" and "password" keys');
 }
-$config = parse_ini_file(__DIR__.'/config.ini');
+$config = parse_ini_file(dirname(__FILE__).'/config.ini');
 
-$api = new obs\API($config['login'], $config['password']);
+$api = new com_meego_obsconnector_API($config['login'], $config['password']);
 $projects = $api->getProjects();
 // var_dump($api->getRepositories($projects[0]));
 

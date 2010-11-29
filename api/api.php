@@ -1,17 +1,15 @@
 <?php
 
-namespace com\meego\obsconnector;
-
 // FIXME: use some autoloader
-require __DIR__.'/http.php';
+require dirname(__FILE__).'/http.php';
 
-class API
+class com_meego_obsconnector_API
 {
     private $http = null;
 
     public function __construct($login, $password)
     {
-        $this->http = new HTTP('api.pub.meego.com', 'https');
+        $this->http = new com_meego_obsconnector_HTTP('api.pub.meego.com', 'https');
         $this->http->setAuthentication($login, $password);
     }
 
