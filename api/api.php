@@ -9,10 +9,10 @@ class API
 {
     private $http = null;
 
-    public function __construct()
+    public function __construct($login, $password)
     {
         $this->http = new HTTP('api.pub.meego.com', 'https');
-        $this->http->setAuthentication('indeyets', 'TFkRjenhKh');
+        $this->http->setAuthentication($login, $password);
     }
 
     public function getProjects()
