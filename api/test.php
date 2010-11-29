@@ -8,12 +8,18 @@ if (!file_exists(dirname(__FILE__).'/config.ini')) {
 $config = parse_ini_file(dirname(__FILE__).'/config.ini');
 
 $api = new com_meego_obsconnector_API($config['login'], $config['password']);
-$projects = $api->getProjects();
-// var_dump($api->getRepositories($projects[0]));
+// $projects = $api->getProjects();
+// repositories = $api->getRepositories($projects[0]));
+// $packages = $api->getPackages($projects[0]);
+//
+// $project_name = $projects[0];
+// $package_name = $packages[0];
 
-$packages = $api->getPackages($projects[0]);
+$project_name = 'home:timoph';
+$package_name = 'xournal';
 
-$_meta = $api->getPackageMeta($projects[0], $packages[0]);
-var_dump($_meta['owners']);
+$_meta = $api->getPackageMeta($project_name, $package_name);
+$spec = $api->getPackageSpec($project_name, $package_name);
 
-var_dump($api->getPackageSpec($projects[0], $packages[0]));
+var_dump($_meta);
+var_dump($spec);
