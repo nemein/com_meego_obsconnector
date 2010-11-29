@@ -4,10 +4,10 @@ require __DIR__.'/api.php';
 
 use com\meego\obsconnector as obs;
 
-if (!file_exists(__DIR__.'/config.yaml')) {
-    throw new RuntimeException('Please create config.yaml file with "login" and "password" keys');
+if (!file_exists(__DIR__.'/config.ini')) {
+    throw new RuntimeException('Please create config.ini file with "login" and "password" keys');
 }
-$config = yaml_parse_file(__DIR__.'/config.yaml');
+$config = parse_ini_file(__DIR__.'/config.ini');
 
 $api = new obs\API($config['login'], $config['password']);
 $projects = $api->getProjects();
