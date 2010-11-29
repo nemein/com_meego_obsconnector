@@ -6,12 +6,11 @@ use com\meego\obsconnector as obs;
 
 $api = new obs\API;
 $projects = $api->getProjects();
-// $repos = $api->getRepositories($projects[0]);
-// var_dump($repos);
+// var_dump($api->getRepositories($projects[0]));
+
 $packages = $api->getPackages($projects[0]);
-$files = $api->getPackageSourceFiles($projects[0], $packages[0]);
-foreach ($files as $file) {
-    if (strpos($file, '.spec') !== false) {
-        var_dump($api->getPackageSourceFile($projects[0], $packages[0], $file));
-    }
-}
+
+$_meta = $api->getPackageMeta($projects[0], $packages[0]);
+var_dump($_meta['owners']);
+
+var_dump($api->getPackageSpec($projects[0], $packages[0]));

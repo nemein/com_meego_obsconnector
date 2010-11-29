@@ -35,7 +35,7 @@ class API
     public function getPackageMeta($project, $package)
     {
         $txt = $this->http->get('/source/'.$project.'/'.$package.'/_meta');
-        return $txt;
+        return $this->parsePackageXML($txt);
     }
 
     public function getPackageSourceFiles($project, $package)
@@ -50,6 +50,16 @@ class API
         return $txt;
     }
 
+    public function getPackageSpec($project, $package)
+    {
+        $spec_name = $package.'.spec';
+
+        // $files = $api->getPackageSourceFiles($projects[0], $packages[0]);
+        // if (!in_array($spec_name, $files))
+        //     return null;
+
+        return $this->getPackageSourceFile($project, $package, $spec_name);
+    }
 
     public function getRepositories($project)
     {
@@ -78,6 +88,22 @@ class API
 
         return $retval;
     }
+
+    protected function parsePackageXML($xml)
+    {
+        $_xml = simplexml_load_string($xml);
+
+        $retval = array('owners' => array());
+
+        foreach ($_xml->person as $person) {
+            if ($person['role'] == 'maintainer') {
+                $retval['owners'][] = strval($person['userid']);
+            }
+        }
+
+        return $retval;
+    }
+
 
     protected function getPublished($project = null, $repository = null, $architecture = null)
     {
