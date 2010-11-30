@@ -36,13 +36,36 @@ class Fetcher
                 foreach ($this->api->getPackages($project_name, $repo_name, $arch_name) as $package_name) {
                     echo '   -> '.$package_name."\n";
 
+                    $spec = $this->getSpec($project_name, $package_name);
+
                     $package = new com_meego_package();
                     $package->repository = $repo->id;
                     $package->name = $package_name;
+                    $package->version = $spec->version;
+                    $package->summary = $spec->summary;
+                    $package->description = $spec->description;
+                    $package->category = $spec->group;
+                    $package->license = $spec->license;
+                    $package->url = $spec->url;
                     $package->create();
                 }
             }
         }
+    }
+
+    public function getSpec($project_name, $package_name)
+    {
+        static $cache = null;
+
+        if (null === $cache) {
+            $cache = array();
+        }
+
+        if (!array_key_exists($project_name.'_'.$package_name, $cache)) {
+            $cache[$project_name.'_'.$package_name] = new RpmSpecParser($this->api->getPackageSpec($project_name, $package_name), '');
+        }
+
+        return $cache[$project_name.'_'.$package_name];
     }
 }
 
