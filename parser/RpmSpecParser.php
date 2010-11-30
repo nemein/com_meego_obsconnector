@@ -37,7 +37,7 @@ class RpmSpecParser extends Parser {
     /**
      * Constructor
      */
-    function __construct(&$path, &$distribution) {
+    function __construct($path, $distribution) {
         parent::__construct($path, $distribution);
         $this->parse();
         fclose($this->handle);

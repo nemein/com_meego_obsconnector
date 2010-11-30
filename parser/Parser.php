@@ -138,16 +138,18 @@ class Parser {
             $this->location = $location;
             $this->distribution = $distribution;
 
-            if (file_exists($this->location)) {
-
-                $this->handle = fopen($this->location, 'r');
-
-                if (! $this->handle) {
-                    die('Opening file: ' . $location . " failed\n");
-                }
-
+            if (get_resource_type($this->handle) == 'stream') {
+                $this->handle = $location;
             } else {
-                die('File unavailable at ' . $location . "\n");
+                if (! file_exists($this->location)) {
+                    die('File unavailable at ' . $location . "\n");
+                } else {
+                    $this->handle = fopen($this->location, 'r');
+
+                    if (! $this->handle) {
+                        die('Opening file: ' . $location . " failed\n");
+                    }
+                }
             }
         }
     }
