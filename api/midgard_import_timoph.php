@@ -93,6 +93,7 @@ class Fetcher
             if (count($results) === 0) {
                 $category = new com_meego_package_category();
                 $category->name = $piece;
+                $category->up = ($prev === null ? 0 : $prev->id);
                 $category->create();
 
                 $prev = $category;
