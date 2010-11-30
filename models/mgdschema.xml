@@ -8,7 +8,7 @@
         <property name="version" type="string" index="yes" />
         <property name="summary" type="text" />
         <property name="description" type="text" />
-        <property name="group" type="string" index="yes">
+        <property name="category" type="unsigned integer" link="com_meego_package_category:id">
             <description>Package category, e.g. applications/internet</description>
         </property>
         <property name="license" type="string">
@@ -19,7 +19,14 @@
         <!-- Missing: requires, buildrequires, provides, obsoletes -->
     </type>
 
+    <type name="com_meego_package_category" table="com_meego_package_category">
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes" />
+        <property name="up" type="unsigned integer" link="com_meego_package_category:id" upfield="up" />
+        <property name="name" type="string" index="yes" />
+    </type>
+
     <type name="com_meego_package_relation" table="com_meego_package_relation" parent="com_meego_package">
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes" />
         <property name="from" type="unsigned integer" link="com_meego_package:id" parentfield="from" />
         <property name="relation" type="string" index="yes">
             <!-- TODO: enum -->
