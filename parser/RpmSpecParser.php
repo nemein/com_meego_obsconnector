@@ -25,6 +25,16 @@ class RpmSpecParser extends Parser {
     var $release = '';
 
     /**
+     * Epoch info
+     */
+    var $epoch = '';
+
+    /**
+     * Collect subpackage info to a separate array
+     */
+    var $subpackages = array();
+
+    /**
      * Constructor
      */
     function __construct(&$path, &$distribution) {
@@ -50,12 +60,17 @@ class RpmSpecParser extends Parser {
             '/^Summary:\s*(.*)$/i',
             '/^License:\s*(.*)$/i',
             '/^URL:\s*(.*)$/i',
-            '/^Epoch:\s(.*)$/i',
-            '/^Group:\s(.*)$/i',
+            '/^Epoch:\s*(.*)/i',
+            '/^Group:\s*(.*)$/i',
             '/^%define\s*(\S*)\s*(\S*)\s*$/i',
             '/^%description\s*(.*)$/i',
+            '/^%description:.*$/',
             '/%package\s*(.*)$/i',
-
+            '/^Requires:(.*)$/i',
+            '/^BuildRequires:(.*)$/i',
+            '/^Obsoletes:(.*)$/i',
+            '/^Conflicts:(.*)$/i',
+            '/^.*$/',
         );
 
         $replace = array(
@@ -70,19 +85,140 @@ class RpmSpecParser extends Parser {
             'group: $1',
             '$1: $2',
             'description: $1',
+            'description: $1',
             'package: $1',
+            'depends: $1',
+            'buildDepends: $1',
+            'obsoletes: $1',
+            'conflicts: $1',
+            '$0',
         );
 
+        $_flag_subpackage = false;
+
         while (($buffer = fgets($this->handle, $this->blocksize)) !== false) {
+/*
+            $skip  = '/^';
+            $skip .= '(#.*)';
+            $skip .= '|(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+';
+            $skip .= '$/';
+            $cnt = preg_match($skip, $buffer, $matches);
+
+            if (  $cnt &&
+                ! $_flag_subpackage) {
+                continue;
+            }
+*/
             $result = preg_filter($pattern, $replace, $buffer);
+
             if ($result) {
-                $info = explode(':', $result);
-                $this->$info[0] = $info[1];
+                $info = explode(':', $result, 2);
+
+                if (   $_flag_subpackage
+                    && trim($result) == '') {
+                    // stop subpackage info collection
+                    $this->debug('Stop collecting subpackage info');
+                    $_flag_subpackage = false;
+                    $_subpackage = '';
+                    $_collection = '';
+                    $_data = '';
+
+                }
+
+                if ($info[0] == 'package') {
+                    // start subpackage info collection
+                    $this->debug('Start collecting subpackage info');
+                    $_subpackage = trim($info[1]);
+                    $_flag_subpackage = true;
+                }
+
+                if (isset($info[1])) {
+                    // set where do we collect data; important if we collect info that spans over multiple lines
+                    $_collection = trim($info[0]);
+
+                    if (strlen($_collection) > 0) {
+
+                        if (   ! isset($this->$info[0])
+                            && ! $_flag_subpackage) {
+                            // this is not a data we want to collect
+                            $this->debug('Not useful data; continue looping: ' . $info[0]);
+                            continue;
+                        }
+                        $_data = trim($info[1]);
+
+                        // check if data has variable(s) that need(s) to be substituted
+                        $_variables = preg_replace('/%{([^}]+)}/e', "self::_get('$1')", $_data);
+
+                        if ($_variables != $_data) {
+                            $this->debug('Substituted a variable in : ' . $_data . ' => ' . $_variables);
+                            $_data = $_variables;
+                        }
+
+                        $this->debug('Collection is: ' . $_collection . ', data is singleline: ' . $_data);
+                    }
+                } else {
+                    if (   isset($_collection)
+                        && isset($info[0])
+                        && $info[0][0] != '%') {
+                        // no new _collection, so this must be a multiline info
+                        $_data = "\n" . trim($info[0]);
+                        // are we in subpackage mode?
+                        if ($_flag_subpackage) {
+                            $this->subpackages[$_subpackage][$_collection] .= $_data;
+                        } elseif(isset($this->$_collection)) {
+                            // let's see if this is a needed data and append it
+                            if (! is_array($this->$_collection)) {
+                                $this->$_collection .= $_data;
+                            }
+                        }
+                        $this->debug('Collection is: ' . $_collection . ', data is multiline: ' . $_data);
+                    }
+                }
+
+                // setting part
+                if ($_flag_subpackage) {
+                    // store the data to collection of that particular subpackage
+                    $this->subpackages[$_subpackage][$_collection] = $_data;
+                    //print_r($this->subpackages);
+                } elseif (isset($this->$info[0])) {
+                    $this->debug('OK, we can set: ' . $info[0]);
+
+                    if (isset($_data)) {
+                        if (is_array($this->$info[0])) {
+                            // do we store in array, let's then push
+                            array_push($this->$info[0], $_data);
+                            $this->debug('Pushed: ' . $_data . ' to ' . $info[0]);
+                        } else {
+                            // ok, the internal attrib is a string
+                            $this->$info[0] = $_data;
+                            $this->debug("Set " . $this->$info[0] . ' = ' . $_data);
+                        }
+                        unset($_data);
+                    } else {
+                        // @todo: what here?
+                    }
+                }
             }
         }
 
         unset($buffer, $result, $info);
     }
+
+    /**
+     * Getter to use it in preg_* function calls
+     * @param array with matched strings
+     */
+    function _get($matches) {
+        $this->debug('Check key: ' . $matches);
+
+        if (isset($this->$matches)) {
+            $this->debug('Return key: ' . $this->$matches);
+            return $this->$matches;
+        } else {
+            return null;
+        }
+    }
+
 }
 
 ?>

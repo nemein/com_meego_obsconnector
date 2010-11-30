@@ -38,6 +38,7 @@ Requires(preun): GConf2 >= %{gconf_version}
 # Ensure that a compatible libperl is installed
 Requires: perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
 
+Requires: foobar %{epoch}
 Provides: xchat-perl = %{epoch}:%{version}-%{release}
 Obsoletes: xchat-perl < %{epoch}:%{version}-%{release}
 Provides: xchat-python = %{epoch}:%{version}-%{release}

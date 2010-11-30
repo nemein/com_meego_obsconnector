@@ -19,6 +19,11 @@
  */
 class Parser {
     /**
+     * debug flag
+     */
+    var $_flag_debug = false;
+
+    /**
      * Distribuiton name as string
      * Used when composing package version numbers
      */
@@ -146,6 +151,34 @@ class Parser {
             }
         }
     }
+
+    /**
+     * Getter to use it in preg_* function calls
+     * Child can overload, but remember to call this always
+     * @param array with matched strings
+     */
+    function _get($matches) {
+        $this->debug('Check key: ' . $matches);
+
+        if (isset($this->$matches)) {
+            $this->debug('Return key: ' . $this->$matches);
+            return $this->$matches;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * debug
+     */
+    function debug($message) {
+        if ($this->_flag_debug) {
+            $_ts = date("Y-m-d H:i:s", time());
+            echo $_ts . ' [' . get_class($this) . ']: ' . trim($message) . "\n";
+        }
+    }
+
+
 
     /**
      * Kill 'em all

@@ -33,5 +33,38 @@ echo "Release      : " . $spec->release . "\n";
 echo "Summary      : " . $spec->summary . "\n";
 echo "License      : " . $spec->license . "\n";
 echo "Homepage     : " . $spec->url . "\n";
+echo "Description  : " . $spec->description . "\n";
+
+//var_dump($spec);
+
+if (is_array($spec->depends)) {
+    foreach ($spec->depends as $dependency) {
+        echo "Depends      : " . $dependency . "\n";
+    }
+}
+
+echo "\n";
+
+if (is_array($spec->buildDepends)) {
+    foreach ($spec->buildDepends as $dependency) {
+        echo "BuildDepends : " . $dependency . "\n";
+    }
+}
+
+echo "\n";
+
+if (is_array($spec->provides)) {
+    foreach ($spec->provides as $provided) {
+        echo "Provides : " . $provided . "\n";
+    }
+}
+
+echo "\n";
+
+if (is_array($spec->obsoletes)) {
+    foreach ($spec->obsoletes as $obsoleted) {
+        echo "Obsoletes : " . $obsoleted . "\n";
+    }
+}
 
 ?>
