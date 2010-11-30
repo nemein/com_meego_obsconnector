@@ -22,20 +22,18 @@ $dist = 'helloworld';
 $spec = new RpmSpecParser($location, $dist);
 
 echo "Spec file    : " . $location . "\n";
-echo "Content lines: " . (count($spec->content) - 1) . "\n";
 echo "Content bytes: " . filesize($location) . "\n";
 
 echo "\n";
 
 echo "Name         : " . $spec->name . "\n";
 echo "Version      : " . $spec->version . "\n";
+echo "Group        : " . $spec->group . "\n";
 echo "Release      : " . $spec->release . "\n";
 echo "Summary      : " . $spec->summary . "\n";
 echo "License      : " . $spec->license . "\n";
 echo "Homepage     : " . $spec->url . "\n";
 echo "Description  : " . $spec->description . "\n";
-
-//var_dump($spec);
 
 if (is_array($spec->depends)) {
     foreach ($spec->depends as $dependency) {
