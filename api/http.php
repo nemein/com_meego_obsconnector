@@ -23,7 +23,7 @@ class com_meego_obsconnector_HTTP
     public function get($url)
     {
         $context = stream_context_create(array(
-            'http' => array_merge($this->more_options, array('method' => 'GET')),
+            'http' => array_merge($this->more_options, array('method' => 'GET', 'timeout' => 30)),
         ));
 
         return file_get_contents($this->buildUrl($url), false, $context);
@@ -32,7 +32,7 @@ class com_meego_obsconnector_HTTP
     public function get_as_stream($url)
     {
         $context = stream_context_create(array(
-            'http' => array_merge($this->more_options, array('method' => 'GET')),
+            'http' => array_merge($this->more_options, array('method' => 'GET', 'timeout' => 30)),
         ));
 
         return fopen($this->buildUrl($url), 'r', false, $context);
@@ -45,7 +45,8 @@ class com_meego_obsconnector_HTTP
                 $this->more_options,
                 array(
                     'method' => 'POST',
-                    'content' => ''
+                    'content' => '',
+                    'timeout' => 30,
                 )
             ),
         ));
