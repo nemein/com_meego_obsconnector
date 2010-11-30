@@ -1,7 +1,7 @@
 <?php
 
 // FIXME: use some autoloader
-require dirname(__FILE__).'/http.php';
+require __DIR__.'/http.php';
 
 class com_meego_obsconnector_API
 {
