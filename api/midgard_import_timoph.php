@@ -44,9 +44,9 @@ class Fetcher
                     $package->version = $spec->version;
                     $package->summary = $spec->summary;
                     $package->description = $spec->description;
-                    $package->category = $spec->group;
                     $package->license = $spec->license;
                     $package->url = $spec->url;
+                    $package->category = $this->getCategory($spec->group);
                     $package->create();
                 }
             }
@@ -66,6 +66,42 @@ class Fetcher
         }
 
         return $cache[$project_name.'_'.$package_name];
+    }
+
+    public function getCategory($group_string)
+    {
+        $prev = null;
+
+        foreach (explode('/', $group_string) as $piece) {
+            $qc = new midgard_query_constraint_group('AND');
+            $qc->add_constraint(new midgard_query_constraint(
+                new midgard_query_property('name'),
+                '=',
+                new midgard_query_value($piece)
+            ));
+            $qc->add_constraint(new midgard_query_constraint(
+                new midgard_query_property('up'),
+                '=',
+                new midgard_query_value($prev === null ? 0 : $prev->id)
+            ));
+
+            $q = new midgard_query_select(new midgard_query_storage('com_meego_package_category'));
+            $q->set_constraint($qc);
+            $q->execute();
+            $results = $q->list_objects();
+
+            if (count($results) === 0) {
+                $category = new com_meego_package_category();
+                $category->name = $piece;
+                $category->create();
+
+                $prev = $category;
+            } else {
+                $prev = $results[0];
+            }
+        }
+
+        return $prev->id;
     }
 }
 
