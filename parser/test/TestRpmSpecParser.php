@@ -11,12 +11,12 @@
  * @todo: get more spec files for testing
  *
  */
-require_once('../RpmSpecParser.php');
+require_once(realpath(dirname(__FILE__).'/..').'/RpmSpecParser.php');
 
 // @todo: test for remote URL fetching
 //$location = 'http://';
 
-$location = getcwd() . '/test1.spec';
+$location = dirname(__FILE__) . '/test1.spec';
 $dist = 'helloworld';
 
 $spec = new RpmSpecParser($location, $dist);
