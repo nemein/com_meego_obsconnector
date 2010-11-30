@@ -138,7 +138,7 @@ class Parser {
             $this->location = $location;
             $this->distribution = $distribution;
 
-            if (get_resource_type($this->handle) == 'stream') {
+            if (get_resource_type($location) == 'stream') {
                 $this->handle = $location;
             } else {
                 if (! file_exists($this->location)) {
