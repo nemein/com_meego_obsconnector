@@ -44,8 +44,7 @@ class com_meego_obsconnector_API
 
     public function getPackageSourceFile($project, $package, $name)
     {
-        $txt = $this->http->get('/source/'.$project.'/'.$package.'/'.$name);
-        return $txt;
+        return $this->http->get_as_stream('/source/'.$project.'/'.$package.'/'.$name);
     }
 
     public function getPackageSpec($project, $package)

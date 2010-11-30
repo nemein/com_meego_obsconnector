@@ -19,7 +19,8 @@ $project_name = 'home:timoph';
 $package_name = 'xournal';
 
 $_meta = $api->getPackageMeta($project_name, $package_name);
-$spec = $api->getPackageSpec($project_name, $package_name);
+$spec_fp = $api->getPackageSpec($project_name, $package_name);
 
 var_dump($_meta);
-var_dump($spec);
+var_dump(stream_get_contents($spec_fp));
+fclose($spec_fp);
