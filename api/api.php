@@ -24,9 +24,15 @@ class com_meego_obsconnector_API
         return $this->http->get('/source/'.$name.'/_meta');
     }
 
-    public function getPackages($project)
+    public function getSourcePackages($project)
     {
         $txt = $this->http->get('/source/'.$project);
+        return $this->parseDirectoryXML($txt);
+    }
+
+    public function getPackages($project, $repository, $architecture)
+    {
+        $txt = $this->http->get('/build/'.$project.'/'.$repository.'/'.$architecture);
         return $this->parseDirectoryXML($txt);
     }
 
@@ -66,7 +72,8 @@ class com_meego_obsconnector_API
 
     public function getArchitectures($project, $repository)
     {
-        return $this->getPublished($project, $repository);
+        $txt = $this->http->get('/build/'.$project.'/'.$repository);
+        return $this->parseDirectoryXML($txt);
     }
 
     public function getBinaries($project, $repository, $architecture)
