@@ -60,7 +60,8 @@ class com_meego_obsconnector_API
 
     public function getRepositories($project)
     {
-        return $this->getPublished($project);
+        $txt = $this->getPublished($project);
+        return $this->parseDirectoryXML($txt);
     }
 
     public function getArchitectures($project, $repository)
