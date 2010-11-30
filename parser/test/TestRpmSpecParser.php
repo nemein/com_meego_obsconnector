@@ -28,6 +28,7 @@ echo "\n";
 
 echo "Name         : " . $spec->name . "\n";
 echo "Version      : " . $spec->version . "\n";
+echo "Group        : " . $spec->group . "\n";
 echo "Release      : " . $spec->release . "\n";
 echo "Summary      : " . $spec->summary . "\n";
 echo "License      : " . $spec->license . "\n";
