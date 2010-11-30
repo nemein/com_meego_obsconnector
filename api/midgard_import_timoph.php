@@ -1,5 +1,6 @@
 <?php
-require dirname(__FILE__).'/api.php';
+require __DIR__.'/api.php';
+require __DIR__.'/../parser/RpmSpecParser.php';
 
 class Fetcher
 {
