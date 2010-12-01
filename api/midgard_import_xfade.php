@@ -17,7 +17,7 @@ class Fetcher
 
     public function go()
     {
-        $project_name = 'home:timoph';
+        $project_name = 'home:xfade';
 
         echo "Repositories:\n";
         $repositories = $this->api->getRepositories($project_name);
@@ -48,6 +48,23 @@ class Fetcher
                     $package->url = $spec->url;
                     $package->category = $this->getCategory($spec->group);
                     $package->create();
+
+                    $screenshot_names = array_filter(
+                        $this->api->getPackageSourceFiles($project_name, $package_name),
+                        function($name) {
+                            $_marker = 'screenshot.png';
+                            return strpos($name, $_marker) === (strlen($name) - strlen($_marker));
+                        }
+                    );
+
+                    foreach ($screenshot_names as $name) {
+                        $fp = $this->api->getPackageSourceFile($project_name, $package_name, $name);
+
+                        $attachment = $package->create_attachment($name, $name, "image/png");
+                        $attachment->copy_from_memory(stream_get_contents($fp));
+                        fclose($fp);
+                        $attachment->update();
+                    }
                 }
             }
         }
