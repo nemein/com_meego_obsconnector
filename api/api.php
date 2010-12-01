@@ -48,6 +48,17 @@ class com_meego_obsconnector_API
         return $this->parseDirectoryXML($txt);
     }
 
+    public function putPackageSourceFile($project, $package, $filename, $stream_or_string)
+    {
+        if (is_resource($stream_or_string)) {
+            $stream_or_string = stream_get_contents($stream_get_contents);
+            fclose($stream_or_string);
+        }
+
+        $txt = $this->http->put('/source/'.$project.'/'.$package, $stream_or_string);
+        return $this->parseStatus($txt);
+    }
+
     public function getPackageSourceFile($project, $package, $name)
     {
         return $this->http->get_as_stream('/source/'.$project.'/'.$package.'/'.$name);
@@ -107,6 +118,17 @@ class com_meego_obsconnector_API
         }
 
         return $retval;
+    }
+
+    protected function parseStatus($xml)
+    {
+        $_xml = simplexml_load_string($xml);
+
+        return array(
+            'summary' => strval($_xml->summary),
+            'details' => strval($_xml->details),
+            'data'    => strval($_xml->data),
+        );
     }
 
 
