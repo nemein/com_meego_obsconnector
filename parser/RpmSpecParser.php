@@ -71,6 +71,7 @@ class RpmSpecParser extends Parser {
             '/^BuildRequires\s*:(.*)$/i',
             '/^Obsoletes\s*:(.*)$/i',
             '/^Conflicts\s*:(.*)$/i',
+            '/%(\S+)\s*(.*)$/i',
             '/^.*$/',
         );
 
@@ -93,6 +94,7 @@ class RpmSpecParser extends Parser {
             'buildDepends: $1',
             'obsoletes: $1',
             'conflicts: $1',
+            '$1: $2',
             '$0',
         );
 
@@ -113,15 +115,13 @@ class RpmSpecParser extends Parser {
                     $_subpackage = '';
                     $_collection = '';
                     $_data = '';
-
                 }
 
                 if (isset($info[1])) {
 
                     if (strlen(trim($info[1])) > 0
                         && ($info[0] == 'package'
-                        || $info[0] == 'description'
-                        || $info[0] == 'files')) {
+                        || $info[0] == 'description')) {
                         // start subpackage info collection
 
                         $this->debug('Start collecting subpackage info: ' . $info[1]);
@@ -137,9 +137,11 @@ class RpmSpecParser extends Parser {
                         if (   ! isset($this->$info[0])
                             && ! $_flag_subpackage) {
                             // this is not a data we want to collect
+                            $_collection = '';
                             $this->debug('Not useful data; continue looping: ' . $info[0]);
                             continue;
                         }
+
                         $_data = trim($info[1]);
 
                         // check if data has variable(s) that need(s) to be substituted
@@ -156,6 +158,9 @@ class RpmSpecParser extends Parser {
                     if (   isset($_collection)
                         && isset($info[0])
                         && $info[0][0] != '%') {
+
+                        $this->debug("What do we have: " . $info[0]);
+
                         // no new _collection, so this must be a multiline info
                         $_data = "\n" . trim($info[0]);
 

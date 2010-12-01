@@ -21,7 +21,7 @@ class Parser {
     /**
      * debug flag
      */
-    var $_flag_debug = true;
+    var $_flag_debug = false;
 
     /**
      * Distribuiton name as string
