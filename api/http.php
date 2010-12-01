@@ -54,6 +54,23 @@ class com_meego_obsconnector_HTTP
         return file_get_contents($this->buildUrl($url), false, $context);
     }
 
+    public function put($url, $body)
+    {
+        $context = stream_context_create(array(
+            'http' => array_merge(
+                $this->more_options,
+                array(
+                    'method' => 'PUT',
+                    'content' => $body,
+                    'timeout' => 30,
+                )
+            ),
+        ));
+
+        return file_get_contents($this->buildUrl($url), false, $context);
+    }
+
+
 
     protected function buildUrl($url)
     {
