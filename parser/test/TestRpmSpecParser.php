@@ -16,7 +16,7 @@ require_once(realpath(__DIR__.'/..').'/RpmSpecParser.php');
 // @todo: test for remote URL fetching
 //$location = 'http://';
 
-$location = __DIR__ . '/test1.spec';
+$location = __DIR__ . '/test3.spec';
 $dist = 'helloworld';
 
 $spec = new RpmSpecParser($location, $dist);
@@ -64,5 +64,20 @@ if (is_array($spec->obsoletes)) {
         echo "Obsoletes : " . $obsoleted . "\n";
     }
 }
+
+echo "\n";
+
+if (is_array($spec->subpackages)) {
+    foreach ($spec->subpackages as $subpackage) {
+        echo "Subpackage: " . $subpackage['package'] . "\n";
+        foreach ($subpackage as $key => $value) {
+            if ($key != 'package') {
+                echo ucfirst($key) . ': ' . trim($value) . "\n";
+            }
+        }
+        echo "\n";
+    }
+}
+
 
 ?>

@@ -63,8 +63,9 @@ class RpmSpecParser extends Parser {
             '/^Epoch\s*:\s*(.*)/i',
             '/^Group\s*:\s*(.*)$/i',
             '/^%define\s*(\S*)\s*(\S*)\s*$/i',
+            '/^%description\s*$/i',
             '/^%description\s*(.*)$/i',
-            '/^%description\s*:.*$/',
+            '/^%description\s*:(.*)$/',
             '/%package\s*(.*)$/i',
             '/^Requires\s*:(.*)$/i',
             '/^BuildRequires\s*:(.*)$/i',
@@ -86,6 +87,7 @@ class RpmSpecParser extends Parser {
             '$1: $2',
             'description: $1',
             'description: $1',
+            'description: $1',
             'package: $1',
             'depends: $1',
             'buildDepends: $1',
@@ -97,18 +99,7 @@ class RpmSpecParser extends Parser {
         $_flag_subpackage = false;
 
         while (($buffer = fgets($this->handle, $this->blocksize)) !== false) {
-/*
-            $skip  = '/^';
-            $skip .= '(#.*)';
-            $skip .= '|(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+';
-            $skip .= '$/';
-            $cnt = preg_match($skip, $buffer, $matches);
 
-            if (  $cnt &&
-                ! $_flag_subpackage) {
-                continue;
-            }
-*/
             $result = preg_filter($pattern, $replace, $buffer);
 
             if ($result) {
@@ -125,14 +116,19 @@ class RpmSpecParser extends Parser {
 
                 }
 
-                if ($info[0] == 'package') {
-                    // start subpackage info collection
-                    $this->debug('Start collecting subpackage info');
-                    $_subpackage = trim($info[1]);
-                    $_flag_subpackage = true;
-                }
-
                 if (isset($info[1])) {
+
+                    if (strlen(trim($info[1])) > 0
+                        && ($info[0] == 'package'
+                        || $info[0] == 'description'
+                        || $info[0] == 'files')) {
+                        // start subpackage info collection
+
+                        $this->debug('Start collecting subpackage info: ' . $info[1]);
+                        $_subpackage = trim($info[1]);
+                        $_flag_subpackage = true;
+                    }
+
                     // set where do we collect data; important if we collect info that spans over multiple lines
                     $_collection = trim($info[0]);
 
@@ -162,6 +158,7 @@ class RpmSpecParser extends Parser {
                         && $info[0][0] != '%') {
                         // no new _collection, so this must be a multiline info
                         $_data = "\n" . trim($info[0]);
+
                         // are we in subpackage mode?
                         if ($_flag_subpackage) {
                             $this->subpackages[$_subpackage][$_collection] .= $_data;
