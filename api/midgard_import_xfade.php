@@ -61,8 +61,14 @@ class Fetcher
                         $fp = $this->api->getPackageSourceFile($project_name, $package_name, $name);
 
                         $attachment = $package->create_attachment($name, $name, "image/png");
-                        $attachment->copy_from_memory(stream_get_contents($fp));
+
+                        $blob = new midgard_blob($attachment);
+                        $handler = $blob->get_handler();
+
+                        fwrite($handler, stream_get_contents($fp));
                         fclose($fp);
+
+                        fclose($handler);
                         $attachment->update();
                     }
                 }
