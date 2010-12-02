@@ -231,15 +231,25 @@ class Fetcher
     {
         $relation = new com_meego_package_relation();
         $relation->relation = $type;
-        $relation->from = $package->id;
+        $relation->from = $parent->id;
+
         /* @todo: this might actually be $this->getCategory($dependency->group); */
-        $relation->group = $package->group;
+        $relation->group = $parent->group;
+
         /* @todo: this will be set later */
         // $relation-> to = null;
+
         $relation->toName = $dependency->name;
         $relation->version = $dependency->version;
         $relation->constraint = $dependency->constraint;
-        $relation->create();
+
+        $_res = $relation->create();
+
+        if ($_res)
+        {
+            $_mc = midgard_connection::get_instance();
+            echo "Error received from midgard_connection: " . $_mc->get_error_string() . "\n";
+        }
     }
 }
 
