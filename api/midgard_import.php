@@ -245,7 +245,7 @@ class Fetcher
 
         $_res = $relation->create();
 
-        if ($_res)
+        if ($_res != 'MGD_ERR_OK')
         {
             $_mc = midgard_connection::get_instance();
             echo "Error received from midgard_connection: " . $_mc->get_error_string() . "\n";
