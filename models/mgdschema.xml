@@ -27,7 +27,7 @@
 
     <type name="com_meego_package_relation" table="com_meego_package_relation" parent="com_meego_package">
         <property name="id" type="unsigned integer" primaryfield="id" index="yes" />
-        <property name="from" type="unsigned integer" link="com_meego_package:id" parentfield="from" />
+        <property name="from" type="unsigned integer" link="com_meego_package:id" parentfield="frompackage" field="frompackage" />
         <property name="relation" type="string" index="yes">
             <!-- TODO: enum -->
             <description>Relation between packages, for example requires, buildrequires, obsoletes, suggests</description>
@@ -35,7 +35,7 @@
         <property name="group" type="string">
             <description>In case of OR dependencies, the name of the dependency group the relation belongs to</description>
         </property>
-        <property name="to" type="unsigned integer" link="com_meego_package:id">
+        <property name="to" type="unsigned integer" link="com_meego_package:id" field="topackage">
             <description>Relation to package if it is in database</description>
         </property>
         <property name="toname" type="string">
