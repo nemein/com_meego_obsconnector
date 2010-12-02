@@ -2,16 +2,17 @@
 /*
  * RpmSpecParser.php
  *
+ * RPM .spec file parser
+ *
  * @author The Midgard Project, http://www.midgard-project.org
  * @copyright The Midgard Project, http://www.midgard-project.org
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  *
  */
-require_once("Parser.php");
 
-/**
- * Parses RPM spec files
- */
+require_once("Parser.php");
+require_once("Dependency.php");
+
 class RpmSpecParser extends Parser {
 
     /**
@@ -37,18 +38,17 @@ class RpmSpecParser extends Parser {
     /**
      * Constructor
      */
-    function __construct($path, $distribution) {
+    function __construct($path = '', $distribution = '', $debug = false) {
         parent::__construct($path, $distribution);
+        $this->_flag_debug = $debug;
         $this->parse();
         fclose($this->handle);
         parent::__destruct();
     }
 
     /**
-     * Parse the file in 1 go
      *
-     * @todo: add missing patterns and their "replacements"
-     * @todo: parse complex data (such as depends ...)
+     * Parse the file in 1 go
      *
      */
     function parse() {
@@ -71,7 +71,9 @@ class RpmSpecParser extends Parser {
             '/^BuildRequires\s*:(.*)$/i',
             '/^Obsoletes\s*:(.*)$/i',
             '/^Conflicts\s*:(.*)$/i',
-            '/%(\S+)\s*(.*)$/i',
+            '/^Provides\s*:(.*)$/i',
+            '/^%(\S+)\s*(.*)$/i',
+
             '/^.*$/',
         );
 
@@ -94,6 +96,7 @@ class RpmSpecParser extends Parser {
             'buildDepends: $1',
             'obsoletes: $1',
             'conflicts: $1',
+            'provides: $1',
             '$1: $2',
             '$0',
         );
@@ -119,14 +122,19 @@ class RpmSpecParser extends Parser {
 
                 if (isset($info[1])) {
 
-                    if (strlen(trim($info[1])) > 0
+                    if (   strlen(trim($info[1])) > 0
                         && ($info[0] == 'package'
                         || $info[0] == 'description')) {
                         // start subpackage info collection
 
-                        $this->debug('Start collecting subpackage info: ' . $info[1]);
+                        $this->debug('Start collecting subpackage info [' . $info[0] . ']: ' . $info[1]);
                         $_subpackage = trim($info[1]);
                         $_flag_subpackage = true;
+
+                        if (   is_array($this->subpackages)
+                            && ! isset($this->subpackages[$_subpackage])) {
+                            $this->subpackages[$_subpackage] = new Package($_subpackage);
+                        }
                     }
 
                     // set where do we collect data; important if we collect info that spans over multiple lines
@@ -143,6 +151,38 @@ class RpmSpecParser extends Parser {
                         }
 
                         $_data = trim($info[1]);
+                        // @fix: a recursive pattern to filter out :(.*) stuff
+                        $i = -1;
+                        $j = 0;
+                        $_stuff = '';
+                        do {
+                            if (substr($_data, $j, 2) == '(:') {
+                                $_count = null;
+                                $_done = false;
+                                do {
+                                    $i++;
+                                    if (substr($_data, $i, 1) == '(') {
+                                        $_count++;
+                                        //echo "Count (: $_count; j: $j; i: $i\n";
+                                    }
+                                    if (substr($_data, $i, 1) == ')') {
+                                        $_count--;
+                                        //echo "Count ): $_count; pos: $j; i: $i\n";
+                                    }
+                                    if (   isset($_count)
+                                        && $_count == 0
+                                        || $i > strlen($_data)) {
+                                        //echo "Count is 0; finish\n";
+                                        $_done = true;
+                                    }
+                                } while ( ! $_done );
+                                $this->debug("Wipe out stuff from $j till " . ($i + 1));
+                                $_data = substr_replace($_data, ' ', $j, ($i - $j + 1)) . ' ';
+                            }
+                            $i = $j;
+                            $j++;
+                        } while ($j < strlen($_data));
+                        $this->debug('Data is: ' . $_data);
 
                         // check if data has variable(s) that need(s) to be substituted
                         $_variables = preg_replace('/%{([^}]+)}/e', "self::_get('$1')", $_data);
@@ -151,51 +191,45 @@ class RpmSpecParser extends Parser {
                             $this->debug('Substituted a variable in : ' . $_data . ' => ' . $_variables);
                             $_data = $_variables;
                         }
-
-                        $this->debug('Collection is: ' . $_collection . ', data is singleline: ' . $_data);
+                        //$this->debug('Collection is: ' . $_collection . ', data is singleline: ' . $_data);
                     }
                 } else {
                     if (   isset($_collection)
                         && isset($info[0])
                         && $info[0][0] != '%') {
 
-                        $this->debug("What do we have: " . $info[0]);
-
                         // no new _collection, so this must be a multiline info
                         $_data = "\n" . trim($info[0]);
 
                         // are we in subpackage mode?
                         if ($_flag_subpackage) {
-                            $this->subpackages[$_subpackage][$_collection] .= $_data;
+
+                            $this->_setData(&$this->subpackages[$_subpackage], $_collection, $_data);
+
                         } elseif(isset($this->$_collection)) {
-                            // let's see if this is a needed data and append it
-                            if (! is_array($this->$_collection)) {
+                            // let's see if this is a needed data and append it to collection
+                            if ( ! is_array($this->$_collection) ) {
                                 $this->$_collection .= $_data;
                             }
                         }
-                        $this->debug('Collection is: ' . $_collection . ', data is multiline: ' . $_data);
+                        //$this->debug('Collection is: ' . $_collection . ', data is multiline: ' . $_data);
                     }
                 }
 
                 // setting part
                 if ($_flag_subpackage) {
                     // store the data to collection of that particular subpackage
-                    $this->subpackages[$_subpackage][$_collection] = $_data;
-                    //print_r($this->subpackages);
+                    $this->_setData(&$this->subpackages[$_subpackage], $_collection, $_data);
+
                 } elseif (isset($this->$info[0])) {
-                    $this->debug('OK, we can set: ' . $info[0]);
 
                     if (isset($_data)) {
-                        if (is_array($this->$info[0])) {
-                            // do we store in array, let's then push
-                            array_push($this->$info[0], $_data);
-                            $this->debug('Pushed: ' . $_data . ' to ' . $info[0]);
-                        } else {
-                            // ok, the internal attrib is a string
-                            $this->$info[0] = $_data;
-                            $this->debug("Set " . $this->$info[0] . ' = ' . $_data);
-                        }
+                        $this->debug('Check this if array: ' . $info[0]);
+
+                        $this->_setData(&$this, $info[0], $_data);
+
                         unset($_data);
+                        $this->debug('----------------------');
                     } else {
                         // @todo: what here?
                     }
@@ -203,14 +237,108 @@ class RpmSpecParser extends Parser {
             }
         }
 
+        if ($this->_flag_debug) {
+            echo "\nDependencies\n";
+            echo "---------------------\n";
+            print_r($this->depends);
+
+            echo "\nBuild Dependencies\n";
+            echo "---------------------\n";
+            print_r($this->buildDepends);
+
+            echo "\nProvides\n";
+            echo "---------------------\n";
+            print_r($this->provides);
+
+            echo "\nObsoletes\n";
+            echo "---------------------\n";
+            print_r($this->obsoletes);
+
+            echo "\nConflicts\n";
+            echo "---------------------\n";
+            print_r($this->conflicts);
+
+            echo "\nSubpackages\n";
+            echo "---------------------\n";
+            print_r($this->subpackages);
+            //die;
+        }
+
         unset($buffer, $result, $info);
+
+        if ($this->_flag_debug) {
+            //die;
+        }
+    }
+
+    /**
+     * Sets data
+     *
+     * @param holder where collection is located
+     * @param collection where data is placed
+     * @data
+     */
+    private function _setData(&$holder, $collection, $data) {
+        if (   isset($holder->$collection)
+            && is_array($holder->$collection)) {
+            // do we store in array, let's then push an object there
+            if (   $collection == 'subpackages'
+                || $collection == 'depends'
+                || $collection == 'buildDepends'
+                || $collection == 'provides'
+                || $collection == 'obsoletes'
+                || $collection == 'conflicts') {
+
+                    // first split at each ,
+                    $_exp = explode(',', $data);//preg_split('/[,]+/', $data);
+
+                    // if we still have strings spearated by spaces
+                    // within these string we may have definitions with or without a version info
+                    foreach ($_exp as $_def) {
+                        // get all package name, constraint, version definitions
+                        preg_match_all('/(\S*)\s+([<>=]+)\s+(\S*)/', $_def, $_matches, PREG_SET_ORDER);
+
+                        foreach($_matches as $_match) {
+                            //remove from the original string
+                            $_def = str_replace($_match[0], '', $_def);
+                            // create object and push to collection
+                            $_obj = new Dependency($_match[1], $_match[2], $_match[3]);
+                            $this->debug('Push ' . $_match[1] . ' ' . $_match[2] . ' ' . $_match[3] . ' to ' . $collection . ' of ' . $holder->name);
+                            array_push($holder->$collection, $_obj);
+                            unset($_obj);
+                        }
+
+                        $_def = trim($_def);
+                        // we must have only single package names left separated by space
+                        $_matches = preg_split('/[\s]+/', $_def);
+
+                        // add all single package names to our pieces array
+                        foreach($_matches as $_match) {
+                            // create object and push to collection
+                            if (strlen(trim($_match))) {
+                                $_obj = new Dependency($_match);
+                                $this->debug('Push ' . $_match . ' to ' . $collection . ' of ' . $holder->name);
+                                array_push($holder->$collection, $_obj);
+                                unset($_obj);
+                            }
+                        }
+                    }
+                    unset($_exp, $_def, $_matches, $_match);
+            } else {
+                array_push($holder[$collection], $data);
+                $this->debug('Pushed string: ' . $data . ' to array ' . $collection);
+            }
+        } else {
+            $holder->$collection = $data;
+            $this->debug('Set property: ' . $collection . ' to ' . $data . ' of holder: ' . $holder->name);
+        }
     }
 
     /**
      * Getter to use it in preg_* function calls
      * @param array with matched strings
      */
-    function _get($matches) {
+    private function _get($matches) {
         $this->debug('Check key: ' . $matches);
 
         if (isset($this->$matches)) {
@@ -220,7 +348,6 @@ class RpmSpecParser extends Parser {
             return null;
         }
     }
-
 }
 
 ?>

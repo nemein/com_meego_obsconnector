@@ -4,7 +4,9 @@ require __DIR__.'/../parser/RpmSpecParser.php';
 
 class Fetcher
 {
-    public function __construct()
+    private $project_name;
+
+    public function __construct($project_name)
     {
         if (!file_exists(dirname(__FILE__).'/config.ini')) {
             throw new RuntimeException('Please create config.ini file with "login" and "password" keys');
@@ -13,17 +15,17 @@ class Fetcher
         $config = parse_ini_file(dirname(__FILE__).'/config.ini');
 
         $this->api = new com_meego_obsconnector_API($config['login'], $config['password']);
+
+        $this->project_name = $project_name;
     }
 
     public function go()
     {
-        $project_name = 'home:xfade';
-
         echo "Repositories:\n";
-        $repositories = $this->api->getRepositories($project_name);
+        $repositories = $this->api->getRepositories($this->project_name);
         foreach ($repositories as $repo_name) {
             echo ' -> '.$repo_name."\n";
-            foreach ($this->api->getArchitectures($project_name, $repo_name) as $arch_name) {
+            foreach ($this->api->getArchitectures($this->project_name, $repo_name) as $arch_name) {
                 echo '  -> '.$arch_name."\n";
 
                 $repo = new com_meego_repository();
@@ -33,10 +35,10 @@ class Fetcher
                 $repo->url = '* TODO *';
                 $repo->create();
 
-                foreach ($this->api->getPackages($project_name, $repo_name, $arch_name) as $package_name) {
+                foreach ($this->api->getPackages($this->project_name, $repo_name, $arch_name) as $package_name) {
                     echo '   -> '.$package_name."\n";
 
-                    $spec = $this->getSpec($project_name, $package_name);
+                    $spec = $this->getSpec($this->project_name, $package_name);
 
                     $package = new com_meego_package();
                     $package->repository = $repo->id;
@@ -50,7 +52,7 @@ class Fetcher
                     $package->create();
 
                     $screenshot_names = array_filter(
-                        $this->api->getPackageSourceFiles($project_name, $package_name),
+                        $this->api->getPackageSourceFiles($this->project_name, $package_name),
                         function($name) {
                             $_marker = 'screenshot.png';
                             return strpos($name, $_marker) === (strlen($name) - strlen($_marker));
@@ -58,7 +60,7 @@ class Fetcher
                     );
 
                     foreach ($screenshot_names as $name) {
-                        $fp = $this->api->getPackageSourceFile($project_name, $package_name, $name);
+                        $fp = $this->api->getPackageSourceFile($this->project_name, $package_name, $name);
 
                         $attachment = $package->create_attachment($name, $name, "image/png");
 
@@ -84,11 +86,11 @@ class Fetcher
             $cache = array();
         }
 
-        if (!array_key_exists($project_name.'_'.$package_name, $cache)) {
-            $cache[$project_name.'_'.$package_name] = new RpmSpecParser($this->api->getPackageSpec($project_name, $package_name), '');
+        if (!array_key_exists($this->project_name.'_'.$package_name, $cache)) {
+            $cache[$this->project_name.'_'.$package_name] = new RpmSpecParser($this->api->getPackageSpec($this->project_name, $package_name), '');
         }
 
-        return $cache[$project_name.'_'.$package_name];
+        return $cache[$this->project_name.'_'.$package_name];
     }
 
     public function getCategory($group_string)
@@ -129,5 +131,8 @@ class Fetcher
     }
 }
 
-$f = new Fetcher();
+if (count($argv) < 2)
+    die("Please, specify repository name as parameter (for example: home:xfade or home:timoph)\n");
+
+$f = new Fetcher($argv[1]);
 $f->go();

@@ -23,7 +23,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 # Patches 0-9 reserved for official xchat.org patches
 
-BuildRequires: perl perl(ExtUtils::Embed) python-devel openssl-devel pkgconfig, tcl-devel
+BuildRequires: foobar_a >= 2 ohyes, perl whatnot foobar_b > 1 perl(ExtUtils::Embed) python-devel > 3.1.2 openssl-devel, super pkgconfig, tcl-devel
 BuildRequires: GConf2-devel
 BuildRequires: dbus-devel >= 0.60, dbus-glib-devel >= 0.60
 BuildRequires: glib2-devel >= 2.10.0, gtk2-devel >= 2.10.0, bison >= 1.35
@@ -36,8 +36,8 @@ Requires(post): GConf2 >= %{gconf_version}
 Requires(preun): GConf2 >= %{gconf_version}
 
 # Ensure that a compatible libperl is installed
+Requires: zorrro(:(adsds(dsds) dsdj) fsdjflkds ) fdsds(:dssadhsa) djsajsa(d) djjs(fdssd) aaa(:fdsjfjs) bbb(aaaa)
 Requires: perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
-
 Requires: foobar %{epoch}
 Provides: xchat-perl = %{epoch}:%{version}-%{release}
 Obsoletes: xchat-perl < %{epoch}:%{version}-%{release}
