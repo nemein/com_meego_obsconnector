@@ -151,6 +151,7 @@ class Fetcher
             foreach ($spec->depends as $dependency)
             {
                 echo "Depends      : " . $dependency->name  . ' ' . $dependency->constraint . ' ' . $dependency->version . "\n";
+                $this->createRelation('requires', $dependency, $package);
             }
         }
 
