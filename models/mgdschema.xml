@@ -32,7 +32,7 @@
             <!-- TODO: enum -->
             <description>Relation between packages, for example requires, buildrequires, obsoletes, suggests</description>
         </property>
-        <property name="group" type="string">
+        <property name="group" type="string" field="grouppackage" >
             <description>In case of OR dependencies, the name of the dependency group the relation belongs to</description>
         </property>
         <property name="to" type="unsigned integer" link="com_meego_package:id" field="topackage">
