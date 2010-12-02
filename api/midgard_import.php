@@ -38,7 +38,12 @@ class Fetcher
                 foreach ($this->api->getPackages($this->project_name, $repo_name, $arch_name) as $package_name) {
                     echo '   -> '.$package_name."\n";
 
-                    $spec = $this->getSpec($this->project_name, $package_name);
+                    try {
+                        $spec = $this->getSpec($this->project_name, $package_name);
+                    } catch (RuntimeException $e) {
+                        echo '      [EXCEPTION: '.$e->getMessage()."]\n";
+                        continue;
+                    }
 
                     $package = new com_meego_package();
                     $package->repository = $repo->id;
@@ -89,7 +94,13 @@ class Fetcher
         }
 
         if (!array_key_exists($this->project_name.'_'.$package_name, $cache)) {
-            $cache[$this->project_name.'_'.$package_name] = new RpmSpecParser($this->api->getPackageSpec($this->project_name, $package_name), '');
+            $spec_stream = $this->api->getPackageSpec($this->project_name, $package_name);
+
+            if (false === $spec_stream) {
+                throw new RuntimeException("couldn't get spec-file");
+            }
+
+            $cache[$this->project_name.'_'.$package_name] = new RpmSpecParser($spec_stream, '');
         }
 
         return $cache[$this->project_name.'_'.$package_name];
