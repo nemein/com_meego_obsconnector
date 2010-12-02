@@ -11,7 +11,7 @@
  * @todo: get more spec files for testing
  *
  */
-require_once(realpath(__DIR__.'/..').'/RpmSpecParser.php');
+require_once(realpath(__DIR__ . '/..') . '/RpmSpecParser.php');
 
 // @todo: test for remote URL fetching
 

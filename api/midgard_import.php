@@ -51,6 +51,8 @@ class Fetcher
                     $package->category = $this->getCategory($spec->group);
                     $package->create();
 
+                    $this->addRelations($spec, $package);
+
                     $screenshot_names = array_filter(
                         $this->api->getPackageSourceFiles($this->project_name, $package_name),
                         function($name) {
@@ -128,6 +130,115 @@ class Fetcher
         }
 
         return $prev->id;
+    }
+
+    /**
+     * Populates relations, such as
+     * - runtime dependency packages
+     * - build dependency packages
+     * - provided packages
+     * - obsoleted packages
+     * - conflicting packages
+     *
+     * @param spec RpmSpecParse object
+     * @param spec Package object
+     *
+     */
+    private function addRelations($spec, $package)
+    {
+        if (is_array($spec->depends))
+        {
+            foreach ($spec->depends as $dependency)
+            {
+                echo "Depends      : " . $dependency->name  . ' ' . $dependency->constraint . ' ' . $dependency->version . "\n";
+            }
+        }
+
+        echo "\n";
+
+        if (is_array($spec->buildDepends))
+        {
+            foreach ($spec->buildDepends as $dependency)
+            {
+                echo "BuildDepends : package->id: " . $package->id . ', ' . $dependency->name  . ' ' . $dependency->constraint . ' ' . $dependency->version . "\n";
+                $this->createRelation('buildrequires', $dependency, $package);
+            }
+        }
+
+        echo "\n";
+
+        if (is_array($spec->provides))
+        {
+            foreach ($spec->provides as $provided)
+            {
+                echo "Provides : " . $provided->name  . ' ' . $provided->constraint . ' ' . $provided->version . "\n";
+                $this->createRelation('provides', $provided, $package);
+            }
+        }
+
+        echo "\n";
+
+        if (is_array($spec->obsoletes))
+        {
+            foreach ($spec->obsoletes as $obsoleted)
+            {
+                echo "Obsoletes : " . $obsoleted->name  . ' ' . $obsoleted->constraint . ' ' . $obsoleted->version . "\n";
+                $this->createRelation('obsoletes', $obsoleted, $package);
+            }
+        }
+
+        echo "\n";
+
+        if (is_array($spec->subpackages))
+        {
+            foreach ($spec->subpackages as $subpackage)
+            {
+                echo "Subpackage: " . $subpackage->name . "\n";
+                foreach ($subpackage as $key => $value)
+                {
+                    if (   $key == 'depends'
+                        || $key == 'buildDepends'
+                        || $key == 'provides'
+                        || $key == 'conflicts'
+                        || $key == 'obsoletes')
+                    {
+                        foreach ($value as $stuff)
+                        {
+                            echo ucfirst($key) . ': ' . $stuff->name  . ' ' . $stuff->constraint . ' ' . $stuff->version . "\n";
+                        }
+
+                    }
+                    else
+                    {
+                        echo ucfirst($key) . ': ' . trim($value) . "\n";
+                    }
+
+                }
+                echo "\n";
+            }
+        }
+    }
+
+    /**
+     * Create a relation
+     *
+     * @param type of the relation: requires, buildrequires, obsoletes, conflicts, provides
+     * @param relative object that is in some relation with package
+     * @param parent package object
+     */
+    private function createRelation($type, $relative, $parent)
+    {
+        $relation = new com_meego_package_relation();
+        $relation->relation = $type;
+        $relation->from = $package->id;
+        /* @todo: this might actually be $this->getCategory($dependency->group); */
+        $relation->group = $package->group;
+        /* @todo: this will be set later */
+        // $relation-> to = null;
+        $relation->toName = $dependency->name;
+        $relation->version = $dependency->version;
+        $relation->constraint = $dependency->constraint;
+        $relation->create();
     }
 }
 

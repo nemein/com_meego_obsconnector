@@ -17,6 +17,8 @@ class RpmSpecParser extends Parser {
 
     /**
      * Package sepcific attributes
+     *
+     * @todo: we might want to put group to Package object instead
      */
     var $group = '';
 

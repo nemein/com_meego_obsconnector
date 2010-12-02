@@ -11,12 +11,12 @@
  * @todo: get more control files for testing
  *
  */
-require_once('../DebianControlParser.php');
+require_once(realpath(__DIR__ . '/..') . '/DebianControlParser.php');
 
 // @todo: test for remote URL fetching
 //$location = 'http://';
 
-$location = getcwd() . '/test1.control';
+$location = __DIR__ . '/' . '/test1.control';
 $dist = '';
 
 $spec = new DebianControlParser($location, $dist);

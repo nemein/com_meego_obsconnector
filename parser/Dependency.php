@@ -42,7 +42,6 @@ class Dependency extends Package {
     function __construct($name = '', $constraint = '', $version = '') {
         parent::__construct($name, $version);
         $this->constraint = $constraint;
-
         $this->debug('New dependency object: ' . $this->name . '' . $this->constraint . ' ' . $this->version);
     }
 }
