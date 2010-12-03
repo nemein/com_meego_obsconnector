@@ -31,7 +31,7 @@ class Dependency extends Package {
      *  package <= x.y  => the exact or older version
      */
     var $constraint = '';
-    var $_flag_debug = true;
+    var $_flag_debug = false;
 
     /**
      * Constructs a new dependency object

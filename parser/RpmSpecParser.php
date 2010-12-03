@@ -70,12 +70,11 @@ class RpmSpecParser extends Parser {
             '/^%description\s*:(.*)$/',
             '/%package\s*(.*)$/i',
             '/^Requires\s*:(.*)$/i',
-            '/^BuildRequires\s*:(.*)$/i',
             '/^Obsoletes\s*:(.*)$/i',
             '/^Conflicts\s*:(.*)$/i',
             '/^Provides\s*:(.*)$/i',
+            '/^BuildRequires\s*:(.*)$/i',
             '/^%(\S+)\s*(.*)$/i',
-
             '/^.*$/',
         );
 
@@ -95,10 +94,10 @@ class RpmSpecParser extends Parser {
             'description: $1',
             'package: $1',
             'depends: $1',
-            'buildDepends: $1',
             'obsoletes: $1',
             'conflicts: $1',
             'provides: $1',
+            'buildDepends: $1',
             '$1: $2',
             '$0',
         );
@@ -263,14 +262,9 @@ class RpmSpecParser extends Parser {
             echo "\nSubpackages\n";
             echo "---------------------\n";
             print_r($this->subpackages);
-            //die;
         }
 
         unset($buffer, $result, $info);
-
-        if ($this->_flag_debug) {
-            //die;
-        }
     }
 
     /**

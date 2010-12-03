@@ -161,48 +161,37 @@ class Fetcher
         {
             foreach ($spec->depends as $dependency)
             {
-                echo "Depends      : " . $dependency->name  . ' ' . $dependency->constraint . ' ' . $dependency->version . "\n";
                 $this->createRelation('requires', $dependency, $package);
             }
         }
-
-        echo "\n";
 
         if (is_array($spec->buildDepends))
         {
             foreach ($spec->buildDepends as $dependency)
             {
-                echo "BuildDepends : package->id: " . $package->id . ', ' . $dependency->name  . ' ' . $dependency->constraint . ' ' . $dependency->version . "\n";
                 $this->createRelation('buildrequires', $dependency, $package);
             }
         }
-
-        echo "\n";
 
         if (is_array($spec->provides))
         {
             foreach ($spec->provides as $provided)
             {
-                echo "Provides : " . $provided->name  . ' ' . $provided->constraint . ' ' . $provided->version . "\n";
                 $this->createRelation('provides', $provided, $package);
             }
         }
-
-        echo "\n";
 
         if (is_array($spec->obsoletes))
         {
             foreach ($spec->obsoletes as $obsoleted)
             {
-                echo "Obsoletes : " . $obsoleted->name  . ' ' . $obsoleted->constraint . ' ' . $obsoleted->version . "\n";
                 $this->createRelation('obsoletes', $obsoleted, $package);
             }
         }
 
-        echo "\n";
-
         if (is_array($spec->subpackages))
         {
+            echo "Subpackages are not yet loaded to database!\n";
             foreach ($spec->subpackages as $subpackage)
             {
                 echo "Subpackage: " . $subpackage->name . "\n";
@@ -250,9 +239,9 @@ class Fetcher
         /* @todo: this will be set later */
         // $relation-> to = null;
 
-        $relation->toName = $dependency->name;
-        $relation->version = $dependency->version;
-        $relation->constraint = $dependency->constraint;
+        $relation->toname = $relative->name;
+        $relation->version = $relative->version;
+        $relation->constraint = $relative->constraint;
 
         $_res = $relation->create();
 
