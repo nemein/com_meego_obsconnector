@@ -2,10 +2,16 @@
 require __DIR__.'/api.php';
 require __DIR__.'/../parser/RpmSpecParser.php';
 
+/**
+ * @todo: docs
+ */
 class Fetcher
 {
     private $project_name;
 
+    /**
+     * @todo: docs
+     */
     public function __construct($project_name)
     {
         if (!file_exists(dirname(__FILE__).'/config.ini')) {
@@ -19,6 +25,9 @@ class Fetcher
         $this->project_name = $project_name;
     }
 
+    /**
+     * @todo: docs
+     */
     public function go()
     {
         echo "Repositories:\n";
@@ -28,12 +37,20 @@ class Fetcher
             foreach ($this->api->getArchitectures($this->project_name, $repo_name) as $arch_name) {
                 echo '  -> '.$arch_name."\n";
 
-                $repo = new com_meego_repository();
-                $repo->name = $repo_name.'_'.$arch_name;
-                $repo->title = $repo_name.' (for '.$arch_name.')';
+                $repo = $this->getRepository($repo_name . '_' . $arch_name);
+
+                $repo->name = $repo_name . '_' . $arch_name;
+                $repo->title = $repo_name . ' (for ' . $arch_name . ')';
                 $repo->arch = $arch_name;
                 $repo->url = '* TODO *';
-                $repo->create();
+
+                if (! isset($repo->guid)) {
+                    echo '     create: ' . $repo->name . "\n";
+                    $repo->create();
+                } else {
+                    echo '     update: ' . $repo->name . "\n";
+                    $repo->update();
+                }
 
                 foreach ($this->api->getPackages($this->project_name, $repo_name, $arch_name) as $package_name) {
                     echo '   -> '.$package_name."\n";
@@ -45,7 +62,8 @@ class Fetcher
                         continue;
                     }
 
-                    $package = new com_meego_package();
+                    $package = $this->getPackage($package_name, $spec->version, $repo_name);
+
                     $package->repository = $repo->id;
                     $package->name = $package_name;
                     $package->version = $spec->version;
@@ -54,7 +72,14 @@ class Fetcher
                     $package->license = $spec->license;
                     $package->url = $spec->url;
                     $package->category = $this->getCategory($spec->group);
-                    $package->create();
+
+                    if (! isset($repo->guid)) {
+                        echo '        create: ' . $package->name . "\n";
+                        $package->create();
+                    } else {
+                        echo '        update: ' . $package->name . "\n";
+                        $package->update();
+                    }
 
                     $this->addRelations($spec, $package);
 
@@ -71,20 +96,26 @@ class Fetcher
 
                         $attachment = $package->create_attachment($name, $name, "image/png");
 
-                        $blob = new midgard_blob($attachment);
-                        $handler = $blob->get_handler();
+                        if ($attachemnt)
+                        {
+                            $blob = new midgard_blob($attachment);
+                            $handler = $blob->get_handler();
 
-                        fwrite($handler, stream_get_contents($fp));
-                        fclose($fp);
+                            fwrite($handler, stream_get_contents($fp));
+                            fclose($fp);
 
-                        fclose($handler);
-                        $attachment->update();
+                            fclose($handler);
+                            $attachment->update();
+                        }
                     }
                 }
             }
         }
     }
 
+    /**
+     * @todo: docs
+     */
     public function getSpec($project_name, $package_name)
     {
         static $cache = null;
@@ -106,6 +137,9 @@ class Fetcher
         return $cache[$this->project_name.'_'.$package_name];
     }
 
+    /**
+     * @todo: docs
+     */
     public function getCategory($group_string)
     {
         $prev = null;
@@ -159,6 +193,8 @@ class Fetcher
     {
         if (is_array($spec->depends))
         {
+            /* delete relations that are no longer needed */
+            $this->cleanRelations('requires', $spec->depends, $package);
             foreach ($spec->depends as $dependency)
             {
                 $this->createRelation('requires', $dependency, $package);
@@ -167,6 +203,8 @@ class Fetcher
 
         if (is_array($spec->buildDepends))
         {
+            /* delete relations that are no longer needed */
+            $this->cleanRelations('buildrequires', $spec->buildDepends, $package);
             foreach ($spec->buildDepends as $dependency)
             {
                 $this->createRelation('buildrequires', $dependency, $package);
@@ -175,6 +213,8 @@ class Fetcher
 
         if (is_array($spec->provides))
         {
+            /* delete relations that are no longer needed */
+            $this->cleanRelations('provides', $spec->provides, $package);
             foreach ($spec->provides as $provided)
             {
                 $this->createRelation('provides', $provided, $package);
@@ -183,6 +223,8 @@ class Fetcher
 
         if (is_array($spec->obsoletes))
         {
+            /* delete relations that are no longer needed */
+            $this->cleanRelations('obsoletes', $spec->obsoletes, $package);
             foreach ($spec->obsoletes as $obsoleted)
             {
                 $this->createRelation('obsoletes', $obsoleted, $package);
@@ -191,7 +233,7 @@ class Fetcher
 
         if (is_array($spec->subpackages))
         {
-            echo "Subpackages are not yet loaded to database!\n";
+            echo "        TODO: subpackages are not yet loaded to database!\n";
             foreach ($spec->subpackages as $subpackage)
             {
                 echo "Subpackage: " . $subpackage->name . "\n";
@@ -221,35 +263,213 @@ class Fetcher
     }
 
     /**
-     * Create a relation
+     * Cleans up relations from the database that are no longer specified for the package
      *
-     * @param type of the relation: requires, buildrequires, obsoletes, conflicts, provides
-     * @param relative object that is in some relation with package
-     * @param parent package object
+     * @param string relation of the relation: requires, buildrequires, obsoletes, conflicts, provides
+     * @param array of relative objects
+     * @param object parent package object
      */
-    private function createRelation($type, $relative, $parent)
+    private function cleanRelations($type, $relatives, $parent)
     {
-        $relation = new com_meego_package_relation();
-        $relation->relation = $type;
-        $relation->from = $parent->id;
+        $_deleted = array();
+        $storage = new midgard_query_storage('com_meego_package_relation');
+
+        $qc = new midgard_query_constraint_group('AND');
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('from', $storage),
+            '=',
+            new midgard_query_value($parent->id)
+        ));
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('relation', $storage),
+            '=',
+            new midgard_query_value($type)
+        ));
+
+        $q = new midgard_query_select($storage);
+        $q->set_constraint($qc);
+        $q->execute();
+
+        $results = $q->list_objects();
+
+        if (count($results))
+        {
+            foreach ($results as $relation) {
+                //echo 'Check if ' . $parent->name . ' still ' . $type . ': ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
+                foreach ($relatives as $relative) {
+                    //echo 'Compare: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . ' <<<---->>> ' . $relative->name . ' ' . $relative->constraint . ' ' . $relative->version . "\n";
+                    if (   ! ($relation->toname == $relative->name
+                        && $relation->constraint == $relative->constraint
+                        && $relation->version == $relative->version )) {
+                        //echo 'Mark deleted ' . $relation->id . "\n";
+                        $_deleted[$relation->guid] = $relation->id;
+                    } else {
+                        //echo 'Mark kept: ' . $relation->id . "\n";
+                        unset($_deleted[$relation->guid]);
+                        break;
+                    }
+                }
+            }
+
+            foreach ($_deleted as $guid => $value)
+            {
+                echo 'Delete ' . $type . ' of package ' . $parent->name . ': relation guid: ' . $guid . ' (id: ' . $value . ')' . "\n";
+                $relation = new com_meego_package_relation($value);
+                $relation->delete();
+            }
+        }
+    }
+
+    /**
+     * Create a relation only if it does not exists yet
+     * If exists then just update
+     *
+     * @param string relation of the relation: requires, buildrequires, obsoletes, conflicts, provides
+     * @param object relative object that is in some relation with package
+     * @param object parent package object
+     */
+    private function createRelation($relation, $relative, $parent)
+    {
+        $storage = new midgard_query_storage('com_meego_package_relation');
+
+        $qc = new midgard_query_constraint_group('AND');
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('from', $storage),
+            '=',
+            new midgard_query_value($parent->id)
+        ));
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('relation', $storage),
+            '=',
+            new midgard_query_value($relation)
+        ));
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('toname', $storage),
+            '=',
+            new midgard_query_value($relative->name)
+        ));
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('version', $storage),
+            '=',
+            new midgard_query_value($relative->version)
+        ));
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('constraint', $storage),
+            '=',
+            new midgard_query_value($relative->constraint)
+        ));
+
+        $q = new midgard_query_select($storage);
+        $q->set_constraint($qc);
+        $q->execute();
+
+        $results = $q->list_objects();
+
+        if (count($results))
+        {
+            $relation = $results[0];
+        }
+        else
+        {
+            $relation = new com_meego_package_relation();
+            $relation->from = $parent->id;
+            $relation->relation = $relation;
+            $relation->toname = $relative->name;
+
+            /* @todo: this will be set later */
+            // $relation->to = null;
+
+            $relation->version = $relative->version;
+            $relation->constraint = $relative->constraint;
+        }
 
         /* @todo: this might actually be $this->getCategory($dependency->group); */
         $relation->group = $parent->group;
 
-        /* @todo: this will be set later */
-        // $relation-> to = null;
-
-        $relation->toname = $relative->name;
-        $relation->version = $relative->version;
-        $relation->constraint = $relative->constraint;
-
-        $_res = $relation->create();
+        if (! isset($relation->guid))
+        {
+            $_res = $relation->create();
+        }
+        else
+        {
+            $_res = $relation->update();
+        }
 
         if ($_res != 'MGD_ERR_OK')
         {
             $_mc = midgard_connection::get_instance();
-            echo "Error received from midgard_connection: " . $_mc->get_error_string() . "\n";
+            echo 'Error received from midgard_connection: ' . $_mc->get_error_string() . "\n";
         }
+    }
+
+    /**
+     * Checks if a repository already exists in the database
+     *
+     * @param string repository name
+     * @return mixed repo object
+     */
+    private function getRepository($name) {
+        $storage = new midgard_query_storage('com_meego_repository');
+        $qc = new midgard_query_constraint(
+            new midgard_query_property('name', $storage),
+            '=',
+            new midgard_query_value($name)
+        );
+
+        $q = new midgard_query_select($storage);
+        $q->set_constraint($qc);
+        $q->execute();
+
+        $results = $q->list_objects();
+
+        if (count($results))
+        {
+            $repository = $results[0];
+        }
+        else
+        {
+            $repository = new com_meego_repository();
+        }
+        return $repository;
+    }
+
+    /**
+     * Checks if the paclkage already exists in the database
+     *
+     * @param string package name
+     * @param string package version
+     * @return mixed package object
+     */
+    private function getPackage($name = '', $version = '', $repository = '') {
+        $storage = new midgard_query_storage('com_meego_package');
+
+        $qc = new midgard_query_constraint_group('AND');
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('name', $storage),
+            '=',
+            new midgard_query_value($name)
+        ));
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('version', $storage),
+            '=',
+            new midgard_query_value($version)
+        ));
+
+        $q = new midgard_query_select($storage);
+        $q->set_constraint($qc);
+        $q->execute();
+
+        $results = $q->list_objects();
+
+        if (count($results))
+        {
+            $package = $results[0];
+        }
+        else
+        {
+            $package = new com_meego_repository();
+        }
+        return $package;
     }
 }
 
