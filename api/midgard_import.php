@@ -295,16 +295,16 @@ class Fetcher
         if (count($results))
         {
             foreach ($results as $relation) {
-                //echo 'Check if ' . $parent->name . ' still ' . $type . ': ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
+                echo '        check if ' . $parent->name . ' still ' . $type . ': ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
                 foreach ($relatives as $relative) {
-                    //echo 'Compare: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . ' <<<---->>> ' . $relative->name . ' ' . $relative->constraint . ' ' . $relative->version . "\n";
+                    //echo '        Compare: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . ' <<<---->>> ' . $relative->name . ' ' . $relative->constraint . ' ' . $relative->version . "\n";
                     if (   ! ($relation->toname == $relative->name
                         && $relation->constraint == $relative->constraint
                         && $relation->version == $relative->version )) {
-                        //echo 'Mark deleted ' . $relation->id . "\n";
+                        //echo '        mark deleted ' . $relation->id . "\n";
                         $_deleted[$relation->guid] = $relation->id;
                     } else {
-                        //echo 'Mark kept: ' . $relation->id . "\n";
+                        //echo '        mark kept: ' . $relation->id . "\n";
                         unset($_deleted[$relation->guid]);
                         break;
                     }
@@ -328,7 +328,7 @@ class Fetcher
      * @param object relative object that is in some relation with package
      * @param object parent package object
      */
-    private function createRelation($relation, $relative, $parent)
+    private function createRelation($type, $relative, $parent)
     {
         $storage = new midgard_query_storage('com_meego_package_relation');
 
@@ -341,7 +341,7 @@ class Fetcher
         $qc->add_constraint(new midgard_query_constraint(
             new midgard_query_property('relation', $storage),
             '=',
-            new midgard_query_value($relation)
+            new midgard_query_value($type)
         ));
         $qc->add_constraint(new midgard_query_constraint(
             new midgard_query_property('toname', $storage),
@@ -373,7 +373,7 @@ class Fetcher
         {
             $relation = new com_meego_package_relation();
             $relation->from = $parent->id;
-            $relation->relation = $relation;
+            $relation->relation = $type;
             $relation->toname = $relative->name;
 
             /* @todo: this will be set later */
@@ -388,10 +388,12 @@ class Fetcher
 
         if (! isset($relation->guid))
         {
+            echo '        relation created: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
             $_res = $relation->create();
         }
         else
         {
+            echo '        relation updated: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
             $_res = $relation->update();
         }
 
