@@ -313,8 +313,8 @@ class Fetcher
 
             foreach ($_deleted as $guid => $value)
             {
-                echo 'Delete ' . $type . ' of package ' . $parent->name . ': relation guid: ' . $guid . ' (id: ' . $value . ')' . "\n";
-                $relation = new com_meego_package_relation($value);
+                echo '        delete ' . $type . ' of package ' . $parent->name . ': relation guid: ' . $guid . ' (id: ' . $value . ')' . "\n";
+                $relation = new com_meego_package_relation($guid);
                 $relation->delete();
             }
         }
