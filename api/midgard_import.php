@@ -313,9 +313,11 @@ class Fetcher
 
             foreach ($_deleted as $guid => $value)
             {
-                echo '        delete ' . $type . ' of package ' . $parent->name . ': relation guid: ' . $guid . ' (id: ' . $value . ')' . "\n";
                 $relation = new com_meego_package_relation($guid);
-                $relation->delete();
+                if (is_object($relation)) {
+                    $relation->delete();
+                    echo '        delete ' . $type . ' of package ' . $parent->name . ': relation guid: ' . $guid . ' (id: ' . $value . ')' . "\n";
+                }
             }
         }
     }
@@ -388,13 +390,13 @@ class Fetcher
 
         if (! isset($relation->guid))
         {
-            echo '        relation created: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
             $_res = $relation->create();
+            echo '        relation created: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
         }
         else
         {
-            echo '        relation updated: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
             $_res = $relation->update();
+            echo '        relation updated: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
         }
 
         if ($_res != 'MGD_ERR_OK')
