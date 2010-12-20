@@ -62,7 +62,7 @@ class Fetcher
                         continue;
                     }
 
-                    $package = $this->getPackage($package_name, $spec->version, $repo_name);
+                    $package = $this->getPackage($package_name, $spec->version, $repo->id);
 
                     $package->repository = $repo->id;
                     $package->name = $package_name;
@@ -448,7 +448,7 @@ class Fetcher
      * @param string package version
      * @return mixed package object
      */
-    private function getPackage($name = '', $version = '', $repository = '') {
+    private function getPackage($name = null, $version = null, $repository = null) {
         $storage = new midgard_query_storage('com_meego_package');
 
         $qc = new midgard_query_constraint_group('AND');
@@ -461,6 +461,11 @@ class Fetcher
             new midgard_query_property('version', $storage),
             '=',
             new midgard_query_value($version)
+        ));
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('repository', $storage),
+            '=',
+            new midgard_query_value($repository)
         ));
 
         $q = new midgard_query_select($storage);
