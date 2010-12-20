@@ -18,7 +18,7 @@ class Fetcher
             throw new RuntimeException('Please create config.ini file with "login" and "password" keys');
         }
 
-        $config = parse_ini_file(dirname(__FILE__).'/config.ini');
+        $config = parse_ini_file(dirname(__FILE__) . '/config.ini');
 
         $this->api = new com_meego_obsconnector_API($config['login'], $config['password']);
 
@@ -44,7 +44,7 @@ class Fetcher
                 $repo->arch = $arch_name;
                 $repo->url = '* TODO *';
 
-                if (! isset($repo->guid)) {
+                if ( ! $repo->guid ) {
                     echo '     create: ' . $repo->name . "\n";
                     $repo->create();
                 } else {
@@ -53,12 +53,12 @@ class Fetcher
                 }
 
                 foreach ($this->api->getPackages($this->project_name, $repo_name, $arch_name) as $package_name) {
-                    echo '   -> '.$package_name."\n";
+                    echo '   -> ' . $package_name."\n";
 
                     try {
                         $spec = $this->getSpec($this->project_name, $package_name);
                     } catch (RuntimeException $e) {
-                        echo '      [EXCEPTION: '.$e->getMessage()."]\n";
+                        echo '      [EXCEPTION: ' . $e->getMessage()."]\n";
                         continue;
                     }
 
@@ -73,7 +73,7 @@ class Fetcher
                     $package->url = $spec->url;
                     $package->category = $this->getCategory($spec->group);
 
-                    if (! isset($repo->guid)) {
+                    if ( ! $package->guid ) {
                         echo '        create: ' . $package->name . "\n";
                         $package->create();
                     } else {
@@ -131,10 +131,10 @@ class Fetcher
                 throw new RuntimeException("couldn't get spec-file");
             }
 
-            $cache[$this->project_name.'_'.$package_name] = new RpmSpecParser($spec_stream, '');
+            $cache[$this->project_name . '_' . $package_name] = new RpmSpecParser($spec_stream, '');
         }
 
-        return $cache[$this->project_name.'_'.$package_name];
+        return $cache[$this->project_name . '_' . $package_name];
     }
 
     /**
@@ -144,7 +144,8 @@ class Fetcher
     {
         $prev = null;
 
-        foreach (explode('/', $group_string) as $piece) {
+        foreach (explode('/', $group_string) as $piece)
+        {
             $qc = new midgard_query_constraint_group('AND');
             $qc->add_constraint(new midgard_query_constraint(
                 new midgard_query_property('name'),
@@ -162,14 +163,17 @@ class Fetcher
             $q->execute();
             $results = $q->list_objects();
 
-            if (count($results) === 0) {
+            if (count($results) === 0)
+            {
                 $category = new com_meego_package_category();
                 $category->name = $piece;
                 $category->up = ($prev === null ? 0 : $prev->id);
                 $category->create();
 
                 $prev = $category;
-            } else {
+            }
+            else
+            {
                 $prev = $results[0];
             }
         }
@@ -438,7 +442,7 @@ class Fetcher
     }
 
     /**
-     * Checks if the paclkage already exists in the database
+     * Checks if the package already exists in the database
      *
      * @param string package name
      * @param string package version
@@ -471,7 +475,7 @@ class Fetcher
         }
         else
         {
-            $package = new com_meego_repository();
+            $package = new com_meego_package();
         }
         return $package;
     }
