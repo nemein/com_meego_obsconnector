@@ -94,18 +94,22 @@ class Fetcher
                     foreach ($screenshot_names as $name) {
                         $fp = $this->api->getPackageSourceFile($this->project_name, $package_name, $name);
 
-                        $attachment = $package->create_attachment($name, $name, "image/png");
-
-                        if ($attachemnt)
+                        if ($fp)
                         {
-                            $blob = new midgard_blob($attachment);
-                            $handler = $blob->get_handler();
+                            $attachment = $package->create_attachment($name, $name, "image/png");
 
-                            fwrite($handler, stream_get_contents($fp));
-                            fclose($fp);
+                            if ($attachment)
+                            {
+                                $blob = new midgard_blob($attachment);
 
-                            fclose($handler);
-                            $attachment->update();
+                                $handler = $blob->get_handler('wb');
+
+                                fwrite($handler, stream_get_contents($fp));
+                                fclose($fp);
+
+                                fclose($handler);
+                                $attachment->update();
+                            }
                         }
                     }
                 }
