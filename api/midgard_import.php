@@ -15,12 +15,16 @@ class Fetcher
     public function __construct($project_name)
     {
         if (!file_exists(dirname(__FILE__).'/config.ini')) {
-            throw new RuntimeException('Please create config.ini file with "login" and "password" keys');
+            throw new RuntimeException('Please create config.ini file with "login", "password" and, optionally, "host" keys');
         }
 
         $config = parse_ini_file(dirname(__FILE__) . '/config.ini');
 
-        $this->api = new com_meego_obsconnector_API($config['login'], $config['password']);
+        if (isset($config['host'])) {
+            $this->api = new com_meego_obsconnector_API($config['login'], $config['password'], $config['host']);
+        } else {
+            $this->api = new com_meego_obsconnector_API($config['login'], $config['password']);
+        }
 
         $this->project_name = $project_name;
     }
