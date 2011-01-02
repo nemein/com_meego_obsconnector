@@ -7,12 +7,14 @@ class com_meego_obsconnector_HTTP
 
     private $auth = '';
 
-    private $more_options = array();
+    protected $more_options = array();
 
     public function __construct($prefix, $protocol = 'http')
     {
         $this->prefix = $prefix;
         $this->protocol = $protocol;
+
+        $this->setProxy();
     }
 
     public function setAuthentication($user, $password)
@@ -75,5 +77,40 @@ class com_meego_obsconnector_HTTP
     protected function buildUrl($url)
     {
         return $this->protocol.'://'.$this->auth.$this->prefix.$url;
+    }
+
+
+    protected function setProxy()
+    {
+        if ($this->protocol == 'http') {
+            $proxy_var_name = 'http_proxy';
+        } elseif ($this->protocol == 'https') {
+            if (isset($_SERVER['https_proxy'])) {
+                $proxy_var_name = 'https_proxy';
+            } elseif (isset($_SERVER['HTTPS_PROXY'])) {
+                $proxy_var_name = 'HTTPS_PROXY';
+            }
+        }
+
+        if (null === $proxy_var_name) {
+            return;
+        }
+
+        if (!isset($_SERVER[$proxy_var_name])) {
+            return;
+        }
+
+        $parsed_proxy_str = parse_url($_SERVER[$proxy_var_name]);
+
+        if (is_array($parsed_proxy_str) and
+            $parsed_proxy_str['scheme'] == 'http' and
+            isset($parsed_proxy_str['host']) and
+            isset($parsed_proxy_str['port'])
+        ) {
+            $this->more_options['proxy'] = 'tcp://'.$parsed_proxy_str['host'].':'.$parsed_proxy_str['port'];
+            $this->more_options['request_fulluri'] = true;
+        } else {
+            trigger_error(E_WARNING, '"'.$proxy_var_name.'" environment variable is set to the wrong value. expecting http://host:port');
+        }
     }
 }
