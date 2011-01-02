@@ -7,9 +7,9 @@ class com_meego_obsconnector_API
 {
     private $http = null;
 
-    public function __construct($login, $password)
+    public function __construct($login, $password, $host = 'api.pub.meego.com')
     {
-        $this->http = new com_meego_obsconnector_HTTP('api.pub.meego.com', 'https');
+        $this->http = new com_meego_obsconnector_HTTP($host, 'https');
         $this->http->setAuthentication($login, $password);
     }
 
