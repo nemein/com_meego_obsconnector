@@ -110,7 +110,7 @@ class com_meego_obsconnector_HTTP
             $this->more_options['proxy'] = 'tcp://'.$parsed_proxy_str['host'].':'.$parsed_proxy_str['port'];
             $this->more_options['request_fulluri'] = true;
         } else {
-            trigger_error(E_WARNING, '"'.$proxy_var_name.'" environment variable is set to the wrong value. expecting http://host:port');
+            trigger_error('"'.$proxy_var_name.'" environment variable is set to the wrong value. expecting http://host:port', E_USER_WARNING);
         }
     }
 }
