@@ -21,7 +21,8 @@ class com_meego_obsconnector_API
 
     public function getProjectMeta($name)
     {
-        return $this->http->get('/source/'.$name.'/_meta');
+        $txt = $this->http->get('/source/'.$name.'/_meta');
+        return $this->parseProjectXML($txt);
     }
 
     public function getSourcePackages($project)
@@ -120,6 +121,41 @@ class com_meego_obsconnector_API
         return $retval;
     }
 
+    protected function parseProjectXML($xml)
+    {
+        $_xml = simplexml_load_string($xml);
+
+        $retval = array(
+            'name' => '',
+            'title' => '',
+            'description' => '',
+            'maintainer' => '',
+            'bugowner' => '',
+            'repositories' => array()
+        );
+
+        //var_dump($_xml);
+
+        $retval['name'] = strval($_xml['name']);
+        $retval['title'] = strval($_xml->title);
+        $retval['description'] = strval($_xml->description);
+        foreach ($_xml->person as $person) {
+            if ($person['role'] == 'maintainer') {
+                $retval['maintainer'] = strval($person['userid']);
+                $retval['bugowner'] = strval($person['userid']);
+            }
+        }
+        foreach ($_xml->repository as $repository) {
+            $retval['repositories'][strval($repository['name'])]['path'] = strval($repository->path['project']);
+            foreach ($repository->arch as $arch)
+            {
+                // @todo: this could be set to show if the arch is enabled to disabled, or public, non-public
+                $retval['repositories'][strval($repository['name'])]['architectures'][strval($arch)] = 1;
+            }
+        }
+        return $retval;
+    }
+
     protected function parseStatus($xml)
     {
         $_xml = simplexml_load_string($xml);
@@ -130,7 +166,6 @@ class com_meego_obsconnector_API
             'data'    => strval($_xml->data),
         );
     }
-
 
     protected function getPublished($project = null, $repository = null, $architecture = null)
     {
