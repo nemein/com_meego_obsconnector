@@ -7,12 +7,13 @@ require __DIR__.'/../parser/RpmSpecParser.php';
  */
 class Fetcher
 {
-    private $project_name;
+    private $project_name = null;
+    private $package_counter = 0;
 
     /**
      * @todo: docs
      */
-    public function __construct($project_name)
+    public function __construct()
     {
         if (!file_exists(dirname(__FILE__).'/config.ini')) {
             throw new RuntimeException('Please create config.ini file with "login", "password" and, optionally, "host" keys');
@@ -25,20 +26,35 @@ class Fetcher
         } else {
             $this->api = new com_meego_obsconnector_API($config['login'], $config['password']);
         }
-
-        $this->project_name = $project_name;
     }
 
     /**
-     * @todo: docs
+     * If no argument (ie. project name) is given when running this script
+     * then we go through all available projects
      */
-    public function go()
+    public function scan_all_projects()
     {
+        $projects = $this->api->getProjects();
+        $i = 0;
+        foreach ($projects as $project_name)
+        {
+            echo '#' . ++$i . ' Project: ' . $project_name . "\n";
+            echo "--------------------------------------------\n";
+            $this->go($project_name);
+        }
+    }
+
+    /**
+     * Goes through a project
+     */
+    public function go($project_name)
+    {
+        $project_meta = $this->api->getProjectMeta($project_name);
         echo "Repositories:\n";
-        $repositories = $this->api->getRepositories($this->project_name);
+        $repositories = $this->api->getRepositories($project_name);
         foreach ($repositories as $repo_name) {
             echo ' -> '.$repo_name."\n";
-            foreach ($this->api->getArchitectures($this->project_name, $repo_name) as $arch_name) {
+            foreach ($this->api->getArchitectures($project_name, $repo_name) as $arch_name) {
                 echo '  -> '.$arch_name."\n";
 
                 $repo = $this->getRepository($repo_name . '_' . $arch_name);
@@ -56,11 +72,11 @@ class Fetcher
                     $repo->update();
                 }
 
-                foreach ($this->api->getPackages($this->project_name, $repo_name, $arch_name) as $package_name) {
-                    echo '   -> ' . $package_name."\n";
+                foreach ($this->api->getPackages($project_name, $repo_name, $arch_name) as $package_name) {
+                    echo '   -> ' . ++$this->package_counter . ': ' . $package_name."\n";
 
                     try {
-                        $spec = $this->getSpec($this->project_name, $package_name);
+                        $spec = $this->getSpec($project_name, $package_name);
                     } catch (RuntimeException $e) {
                         echo '      [EXCEPTION: ' . $e->getMessage()."]\n";
                         continue;
@@ -88,7 +104,7 @@ class Fetcher
                     $this->addRelations($spec, $package);
 
                     $screenshot_names = array_filter(
-                        $this->api->getPackageSourceFiles($this->project_name, $package_name),
+                        $this->api->getPackageSourceFiles($project_name, $package_name),
                         function($name) {
                             $_marker = 'screenshot.png';
                             return strpos($name, $_marker) === (strlen($name) - strlen($_marker));
@@ -96,7 +112,7 @@ class Fetcher
                     );
 
                     foreach ($screenshot_names as $name) {
-                        $fp = $this->api->getPackageSourceFile($this->project_name, $package_name, $name);
+                        $fp = $this->api->getPackageSourceFile($project_name, $package_name, $name);
 
                         if ($fp)
                         {
@@ -132,17 +148,17 @@ class Fetcher
             $cache = array();
         }
 
-        if (!array_key_exists($this->project_name.'_'.$package_name, $cache)) {
-            $spec_stream = $this->api->getPackageSpec($this->project_name, $package_name);
+        if (!array_key_exists($project_name . '_' . $package_name, $cache)) {
+            $spec_stream = $this->api->getPackageSpec($project_name, $package_name);
 
             if (false === $spec_stream) {
                 throw new RuntimeException("couldn't get spec-file");
             }
 
-            $cache[$this->project_name . '_' . $package_name] = new RpmSpecParser($spec_stream, '');
+            $cache[$project_name . '_' . $package_name] = new RpmSpecParser($spec_stream, '');
         }
 
-        return $cache[$this->project_name . '_' . $package_name];
+        return $cache[$project_name . '_' . $package_name];
     }
 
     /**
@@ -494,8 +510,12 @@ class Fetcher
     }
 }
 
-if (count($argv) < 2)
-    die("Please, specify repository name as parameter (for example: home:xfade or home:timoph)\n");
-
-$f = new Fetcher($argv[1]);
-$f->go();
+$f = new Fetcher();
+if ($argv[1])
+{
+    $f->go($argv[1]);
+}
+else
+{
+    $f->scan_all_projects();
+}
