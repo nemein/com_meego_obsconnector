@@ -27,7 +27,6 @@ class com_meego_obsconnector_HTTP
         $context = stream_context_create(array(
             'http' => array_merge($this->more_options, array('method' => 'GET', 'timeout' => 30)),
         ));
-
         return file_get_contents($this->buildUrl($url), false, $context);
     }
 
@@ -36,8 +35,7 @@ class com_meego_obsconnector_HTTP
         $context = stream_context_create(array(
             'http' => array_merge($this->more_options, array('method' => 'GET', 'timeout' => 30)),
         ));
-
-        return fopen($this->buildUrl($url), 'r', false, $context);
+        return @fopen($this->buildUrl($url), 'r', false, $context);
     }
 
     public function post($url, array $parameters = array())
