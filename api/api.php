@@ -7,10 +7,24 @@ class com_meego_obsconnector_API
 {
     private $http = null;
 
-    public function __construct($login, $password, $host = 'api.pub.meego.com')
+    public function __construct($login = null, $password = null, $host = 'api.pub.meego.com')
     {
-        $this->http = new com_meego_obsconnector_HTTP($host, 'https');
-        $this->http->setAuthentication($login, $password);
+        $prefix = '';
+
+        if (!  ($login
+            && $password))
+        {
+            // no login and password given, so we use the public prefix for URLs
+            $prefix = '/public';
+        }
+
+        $this->http = new com_meego_obsconnector_HTTP($host . $prefix, 'https');
+
+        if (   $login
+            && $password)
+        {
+            $this->http->setAuthentication($login, $password);
+        }
     }
 
     public function getProjects()
@@ -147,6 +161,36 @@ class com_meego_obsconnector_API
         }
         foreach ($_xml->repository as $repository) {
             $retval['repositories'][strval($repository['name'])]['path'] = strval($repository->path['project']);
+
+            // set blank defaults
+            $retval['repositories'][strval($repository['name'])]['os'] = '';
+            $retval['repositories'][strval($repository['name'])]['osversion'] = '';
+            $retval['repositories'][strval($repository['name'])]['osgroup'] = '';
+            $retval['repositories'][strval($repository['name'])]['osux'] = '';
+
+            // parse the path to determine OS, version, group and UX data
+            $info = explode(':', $repository->path['project']);
+            if (is_array($info))
+            {
+                if (isset($info[0]))
+                {
+                    $retval['repositories'][strval($repository['name'])]['os'] = mb_strtolower($info[0], 'UTF-8');
+                }
+                if (isset($info[1]))
+                {
+                    $retval['repositories'][strval($repository['name'])]['osversion'] = mb_strtolower($info[1], 'UTF-8');
+                }
+                if (isset($info[2]))
+                {
+                    $retval['repositories'][strval($repository['name'])]['osgroup'] = mb_strtolower($info[2], 'UTF-8');
+                }
+                if (isset($info[3]))
+                {
+                    // @todo: UX might be too MeeGo specific, may not work with other OBSes
+                    $retval['repositories'][strval($repository['name'])]['osux'] = mb_strtolower($info[3], 'UTF-8');
+                }
+            }
+
             foreach ($repository->arch as $arch)
             {
                 // @todo: this could be set to show if the arch is enabled to disabled, or public, non-public
