@@ -56,9 +56,23 @@
             <description>Pretty name for the repository</description>
         </property>
         <property name="arch" type="string">
-            <description>Arch, eg armel</description>
+            <description>Arch, example: armel</description>
         </property>
-        <property name="url" type="string" />
+        <property name="url" type="string">
+            <description>Repository URL</description>
+        </property>
+        <property name="os" type="string">
+            <description>Name of the OS this repository is made for, example: meego</description>
+        </property>
+        <property name="osversion" type="string">
+            <description>Version of the OS this repository is made for, example: 1.0</description>
+        </property>
+        <property name="osgroup" type="string">
+            <description>Name of the group this repository belongs to within the OS, example: core</description>
+        </property>
+        <property name="osux" type="string">
+            <description>Name of the user experience this repository belongs to within the group, example: netbook</description>
+        </property>
         <property name="disabledownload" type="bool">
             <description>Disable direct downloads for this repository</description>
         </property>

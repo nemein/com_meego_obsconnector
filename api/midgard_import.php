@@ -15,16 +15,30 @@ class Fetcher
      */
     public function __construct()
     {
-        if (!file_exists(dirname(__FILE__).'/config.ini')) {
+        if ( ! file_exists(dirname(__FILE__).'/config.ini') )
+        {
+            // @TODO:
+            // This could be uncommented if we could get list of publisihed projects
+            // via the /public route
+
+            //echo "Importing only public repositories\n";
+            //$this->api = new com_meego_obsconnector_API();
+
+            // for now we bail out if there is no config.ini with login and password details
             throw new RuntimeException('Please create config.ini file with "login", "password" and, optionally, "host" keys');
         }
+        else
+        {
+            $config = parse_ini_file(dirname(__FILE__) . '/config.ini');
 
-        $config = parse_ini_file(dirname(__FILE__) . '/config.ini');
-
-        if (isset($config['host'])) {
-            $this->api = new com_meego_obsconnector_API($config['login'], $config['password'], $config['host']);
-        } else {
-            $this->api = new com_meego_obsconnector_API($config['login'], $config['password']);
+            if (isset($config['host']))
+            {
+                $this->api = new com_meego_obsconnector_API($config['login'], $config['password'], $config['host']);
+            }
+            else
+            {
+                $this->api = new com_meego_obsconnector_API($config['login'], $config['password']);
+            }
         }
     }
 
@@ -54,6 +68,9 @@ class Fetcher
         $repositories = $this->api->getRepositories($project_name);
         foreach ($repositories as $repo_name) {
             echo ' -> '.$repo_name."\n";
+
+            //var_dump($project_meta['repositories'][$repo_name]);
+
             foreach ($this->api->getArchitectures($project_name, $repo_name) as $arch_name) {
                 echo '  -> '.$arch_name."\n";
 
@@ -64,13 +81,19 @@ class Fetcher
                 $repo->arch = $arch_name;
                 $repo->url = '* TODO *';
 
+                $repo->os = $project_meta['repositories'][$repo_name]['os'];
+                $repo->osversion = $project_meta['repositories'][$repo_name]['osversion'];
+                $repo->osgroup = $project_meta['repositories'][$repo_name]['osgroup'];
+                $repo->osux = $project_meta['repositories'][$repo_name]['osux'];
+
                 if ( ! $repo->guid ) {
-                    echo '     create: ' . $repo->name . "\n";
+                    echo '     create: ' . $repo->name;
                     $repo->create();
                 } else {
-                    echo '     update: ' . $repo->name . "\n";
+                    echo '     update: ' . $repo->name;
                     $repo->update();
                 }
+                echo ' (' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
 
                 foreach ($this->api->getPackages($project_name, $repo_name, $arch_name) as $package_name) {
                     echo '   -> ' . ++$this->package_counter . ': ' . $package_name."\n";
@@ -78,7 +101,7 @@ class Fetcher
                     try {
                         $spec = $this->getSpec($project_name, $package_name);
                     } catch (RuntimeException $e) {
-                        echo '      [EXCEPTION: ' . $e->getMessage()."]\n";
+                        echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
                         continue;
                     }
 
