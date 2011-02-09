@@ -111,7 +111,7 @@ class Fetcher
                     $package->name = $package_name;
                     $package->version = $spec->version;
                     $package->summary = $spec->summary;
-                    $package->description = $spec->description;
+                    $package->description = trim($spec->description);
                     $package->license = $spec->license;
                     $package->url = $spec->url;
                     $package->category = $this->getCategory($spec->group);
@@ -537,7 +537,7 @@ $filepath = ini_get("midgard.configuration_file");
 $config = new midgard_config ();
 $config->read_file_at_path($filepath);
 $mgd = midgard_connection::get_instance();
-$mgd->open_config($config); 
+$mgd->open_config($config);
 
 $f = new Fetcher();
 if ($argv[1])
