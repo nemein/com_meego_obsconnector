@@ -192,7 +192,7 @@ class RpmSpecParser extends Parser {
                             $this->debug('Substituted a variable in : ' . $_data . ' => ' . $_variables);
                             $_data = $_variables;
                         }
-                        //$this->debug('Collection is: ' . $_collection . ', data is singleline: ' . $_data);
+                        $this->debug('Collection is: ' . $_collection . ', data is singleline: ' . $_data);
                     }
                 } else {
                     if (   isset($_collection)
@@ -200,28 +200,28 @@ class RpmSpecParser extends Parser {
                         && $info[0][0] != '%') {
 
                         // no new _collection, so this must be a multiline info
-                        $_data = "\n" . trim($info[0]);
+                        $_data = $info[0];
 
                         // are we in subpackage mode?
+
                         if ($_flag_subpackage) {
 
                             $this->_setData(&$this->subpackages[$_subpackage], $_collection, $_data);
 
-                        } elseif(isset($this->$_collection)) {
+                        } elseif (isset($this->$_collection)) {
                             // let's see if this is a needed data and append it to collection
                             if ( ! is_array($this->$_collection) ) {
                                 $this->$_collection .= $_data;
                             }
                         }
-                        //$this->debug('Collection is: ' . $_collection . ', data is multiline: ' . $_data);
+                        $this->debug('Collection is: ' . $_collection . ', data is multiline: ' . $_data);
                     }
                 }
 
                 // setting part
                 if ($_flag_subpackage) {
                     // store the data to collection of that particular subpackage
-                    $this->_setData(&$this->subpackages[$_subpackage], $_collection, $_data);
-
+                    // $this->_setData(&$this->subpackages[$_subpackage], $_collection, $_data);
                 } elseif (isset($this->$info[0])) {
 
                     if (isset($_data)) {
@@ -325,7 +325,7 @@ class RpmSpecParser extends Parser {
                 $this->debug('Pushed string: ' . $data . ' to array ' . $collection);
             }
         } else {
-            $holder->$collection = $data;
+            $holder->$collection .= $data;
             $this->debug('Set property: ' . $collection . ' to ' . $data . ' of holder: ' . $holder->name);
         }
     }
