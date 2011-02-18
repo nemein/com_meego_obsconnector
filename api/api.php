@@ -227,7 +227,17 @@ class com_meego_obsconnector_API
         $_xml = simplexml_load_string($xml);
         $retval = array();
         foreach ($_xml->binary as $binary) {
-            $retval[] = strval($binary['filename']);
+            $filename = strval($binary['filename']);
+            $extension = preg_replace('/.*\.(.*)/', '\1', $filename);
+            // skip source packages
+            // for RPM source package ends with .src.rpm
+            // for Debian:
+            if (strrpos($filename, '.src.' . $extension))
+            {
+                echo '     -> skip source binary: ' . $filename . "\n";
+                continue;
+            }
+            $retval[] = $filename;
         }
         return $retval;
     }
