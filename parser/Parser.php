@@ -22,7 +22,7 @@ class Parser extends Package {
     /**
      * debug flag
      */
-    var $_flag_debug = false;
+    var $_flag_debug = true;
 
     /**
      * Distribuiton name as string
@@ -50,30 +50,35 @@ class Parser extends Package {
     /**
      * Contsructor opens the file
      * @param location of the file
-     * @param distribution the package is built for (used on version numbers)c
+     * @param distribution the package is built for (used on version numbers)
      */
     function __construct($location = null, $distribution = '') {
 
         parent::__construct();
 
-        if (! isset($this->location)) {
+        if (! isset($this->location))
+        {
             return false;
-        } else {
+        }
+        else
+        {
             $this->location = $location;
             $this->distribution = $distribution;
 
             if (   is_resource($location)
-                && get_resource_type($location) == 'stream') {
-                $this->handle = $location;
-            } else {
-                if (! file_exists($this->location)) {
-                    die('File unavailable at ' . $location . "\n");
-                } else {
-                    $this->handle = fopen($this->location, 'r');
+                && get_resource_type($location) == 'stream')
+            {
 
-                    if (! $this->handle) {
-                        die('Opening file: ' . $location . " failed\n");
-                    }
+                $this->handle = $location;
+
+            }
+            else
+            {
+                $this->handle = @fopen($this->location, 'r');
+
+                if (! $this->handle)
+                {
+                    throw new RuntimeException('Opening file: ' . $location . " failed\n");
                 }
             }
         }
@@ -88,10 +93,13 @@ class Parser extends Package {
     private function _get($matches) {
         $this->debug('Check key: ' . $matches);
 
-        if (isset($this->$matches)) {
+        if (isset($this->$matches))
+        {
             $this->debug('Return key: ' . $this->$matches);
             return $this->$matches;
-        } else {
+        }
+        else
+        {
             return null;
         }
     }

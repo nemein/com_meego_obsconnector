@@ -37,17 +37,29 @@ class Package {
     var $description = '';
 
     /**
-     * RPM spec      : License:
-     * Debian control: @todo
-     * @todo: this is needed although debian stores this in the copyright file     *
+     * Direct download URL to the package in question
      */
-    var $license = '';
+    var $downloadurl = '';
+
+    /**
+     * Install file that list needed repositories to fulfill runtime dependencies
+     * Maemo (Debian): .install file, @see http://wiki.maemo.org/Installing_applications#.installs
+     * RPM:
+     */
+    var $installfileurl = '';
 
     /**
      * RPM spec file      :  URL:
      * Debian control file:  Homepage
      */
-    var $url = '';
+    var $homepageurl = '';
+
+    /**
+     * RPM spec      : License:
+     * Debian control: @todo
+     * @todo: this is needed although debian stores this in the copyright file     *
+     */
+    var $license = '';
 
     /**
      * RPM spec      : Requires.*:
@@ -79,6 +91,18 @@ class Package {
      * Debian control: Conflicts:
      */
     var $conflicts = array();
+
+    /**
+     * RPM spec      : suggests ?
+     * Debian control: recommends ?
+     */
+    var $suggests = array();
+
+    /**
+     * Name of the parent repository (if any)
+     *
+     */
+    var $repository = '';
 
     /**
      * @param name of the package

@@ -1,6 +1,8 @@
 <?php
 require __DIR__.'/api.php';
-require __DIR__.'/../parser/RpmSpecParser.php';
+//require __DIR__.'/../parser/RpmSpecParser.php';
+require __DIR__.'/../parser/RpmXray.php';
+
 
 /**
  * @todo: docs
@@ -9,6 +11,9 @@ class Fetcher
 {
     private $project_name = null;
     private $package_counter = 0;
+    private $build_counter = 0;
+    // @todo: move to this standard component configuration file
+    private $download_repo_prefix = 'http://repo.pub.meego.com';
 
     /**
      * @todo: docs
@@ -71,7 +76,8 @@ class Fetcher
 
             //var_dump($project_meta['repositories'][$repo_name]);
 
-            foreach ($this->api->getArchitectures($project_name, $repo_name) as $arch_name) {
+            foreach ($this->api->getArchitectures($project_name, $repo_name) as $arch_name)
+            {
                 echo '  -> '.$arch_name."\n";
 
                 $repo = $this->getRepository($repo_name . '_' . $arch_name);
@@ -79,81 +85,131 @@ class Fetcher
                 $repo->name = $repo_name . '_' . $arch_name;
                 $repo->title = $repo_name . ' (for ' . $arch_name . ')';
                 $repo->arch = $arch_name;
-                $repo->url = '* TODO *';
+                $repo->url = '/published/' . $project_name . '/' . $repo_name . '/' . $arch_name;
 
                 $repo->os = $project_meta['repositories'][$repo_name]['os'];
                 $repo->osversion = $project_meta['repositories'][$repo_name]['osversion'];
                 $repo->osgroup = $project_meta['repositories'][$repo_name]['osgroup'];
                 $repo->osux = $project_meta['repositories'][$repo_name]['osux'];
 
-                if ( ! $repo->guid ) {
+                if ( ! $repo->guid )
+                {
                     echo '     create: ' . $repo->name;
                     $repo->create();
-                } else {
+                }
+                else
+                {
                     echo '     update: ' . $repo->name;
                     $repo->update();
                 }
                 echo ' (' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
 
-                foreach ($this->api->getPackages($project_name, $repo_name, $arch_name) as $package_name) {
-                    echo '   -> ' . ++$this->package_counter . ': ' . $package_name."\n";
+                foreach ($this->api->getPackages($project_name, $repo_name, $arch_name) as $package_name)
+                {
+                    echo '   -> ' . ++$this->package_counter . ': ' . $package_name . "\n";
 
-                    try {
-                        $spec = $this->getSpec($project_name, $package_name);
-                    } catch (RuntimeException $e) {
-                        echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
-                        continue;
-                    }
+                    foreach($this->api->getBinaryList($project_name, $repo_name, $arch_name, $package_name) as $file_name)
+                    {
 
-                    $package = $this->getPackage($package_name, $spec->version, $repo->id);
+                        echo '     -> ' . ++$this->build_counter . ': ' . $file_name . "\n";
 
-                    $package->repository = $repo->id;
-                    $package->name = $package_name;
-                    $package->version = $spec->version;
-                    $package->summary = $spec->summary;
-                    $package->description = trim($spec->description);
-                    $package->license = $spec->license;
-                    $package->url = $spec->url;
-                    $package->category = $this->getCategory($spec->group);
+                        $extinfo = $this->api->getPackageWithInformation($project_name, $repo_name, $arch_name, $package_name, $file_name);
 
-                    if ( ! $package->guid ) {
-                        echo '        create: ' . $package->name . "\n";
-                        $package->create();
-                    } else {
-                        echo '        update: ' . $package->name . "\n";
-                        $package->update();
-                    }
+                        // get a com_meego_package instance
+                        $package = $this->getPackage($extinfo->name, $extinfo->version, $repo->id);
 
-                    $this->addRelations($spec, $package);
+                        $package->name = $file_name;
+                        $package->title = $extinfo->name;
+                        $package->version = $extinfo->version;
+                        $package->summary = $extinfo->summary;
+                        $package->description = $extinfo->description;
+                        $package->repository = $repo->id;
 
-                    $screenshot_names = array_filter(
-                        $this->api->getPackageSourceFiles($project_name, $package_name),
-                        function($name) {
-                            $_marker = 'screenshot.png';
-                            return strpos($name, $_marker) === (strlen($name) - strlen($_marker));
-                        }
-                    );
+                        // add the drect download link
+                        $package->downloadurl = $this->download_repo_prefix . '/' . str_replace('home:', 'home:/', $project_name) . '/' . $repo_name . '/' . $arch_name . '/' . $file_name;
 
-                    foreach ($screenshot_names as $name) {
-                        $fp = $this->api->getPackageSourceFile($project_name, $package_name, $name);
+                        // get the install file URL
+                        $package->installfileurl = $this->api->getInstallFileURL($project_name, $repo_name, $arch_name, $package_name, $file_name);
 
-                        if ($fp)
+                        // @todo
+                        $package->bugtracker = '* TODO *';
+
+                        // for some info we need a special xray
+                        try
                         {
-                            $attachment = $package->create_attachment($name, $name, "image/png");
+                            $rpmxray = new RpmXray($package->downloadurl);
+                        }
+                        catch (RuntimeException $e) {
+                            echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                        }
 
-                            if ($attachment)
+                        if (is_object($rpmxray))
+                        {
+                            $package->license = $rpmxray->license;
+                            $package->homepageurl = $rpmxray->url;
+                            $package->category = $this->getCategory($rpmxray->group);
+                        }
+
+                        if ( ! $package->guid )
+                        {
+                            echo '        create: ' . $package->name . "\n";
+                            $package->create();
+                        }
+                        else
+                        {
+                            echo '        update: ' . $package->name . "\n";
+                            $package->update();
+                        }
+
+                        // populate all kinds of package relations to our database
+                        $this->addRelations($extinfo, $package);
+
+                        try
+                        {
+                            // check the filelist of the package that can be obtained vian an OBS API call
+                            // download the package locally if it has a promising icon in it
+                            // $rpm = $this->getRpm($project_name, $repo_name, $arch_name, $package_name);
+                        }
+                        catch (RuntimeException $e) {
+                            echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                            die;
+                        }
+
+                        $screenshot_names = array_filter(
+                            $this->api->getPackageSourceFiles($project_name, $package_name),
+                            function($name)
                             {
-                                $blob = new midgard_blob($attachment);
+                                $_marker = 'screenshot.png';
+                                return strpos($name, $_marker) === (strlen($name) - strlen($_marker));
+                            }
+                        );
 
-                                $handler = $blob->get_handler('wb');
+                        foreach ($screenshot_names as $name)
+                        {
+                            $fp = $this->api->getPackageSourceFile($project_name, $package_name, $name);
 
-                                fwrite($handler, stream_get_contents($fp));
-                                fclose($fp);
+                            if ($fp)
+                            {
+                                $attachment = $package->create_attachment($name, $name, "image/png");
 
-                                fclose($handler);
-                                $attachment->update();
+                                if ($attachment)
+                                {
+                                    $blob = new midgard_blob($attachment);
+
+                                    $handler = $blob->get_handler('wb');
+
+                                    fwrite($handler, stream_get_contents($fp));
+                                    fclose($fp);
+
+                                    fclose($handler);
+                                    $attachment->update();
+                                }
                             }
                         }
+
+                        //
+                        // @todo: get the icon from the package if exists there
+                        //
                     }
                 }
             }
@@ -167,18 +223,48 @@ class Fetcher
     {
         static $cache = null;
 
-        if (null === $cache) {
+        if (null === $cache)
+        {
             $cache = array();
         }
 
-        if (!array_key_exists($project_name . '_' . $package_name, $cache)) {
+        if ( ! array_key_exists($project_name . '_' . $package_name, $cache) )
+        {
             $spec_stream = $this->api->getPackageSpec($project_name, $package_name);
 
-            if (false === $spec_stream) {
+            if (false === $spec_stream)
+            {
                 throw new RuntimeException("couldn't get spec-file");
             }
 
             $cache[$project_name . '_' . $package_name] = new RpmSpecParser($spec_stream, '');
+        }
+
+        return $cache[$project_name . '_' . $package_name];
+    }
+
+    /**
+     * @todo: docs
+     */
+    public function getRpm($project_name, $repo_name, $arch_name, $package_name)
+    {
+        static $cache = null;
+
+        if (null === $cache)
+        {
+            $cache = array();
+        }
+
+        if ( ! array_key_exists($project_name . '_' . $package_name, $cache) )
+        {
+            $rpm = $this->api->downloadBinary($project_name, $repo_name, $arch_name, $package_name);
+
+            if ($rpm === false)
+            {
+                throw new RuntimeException("couldn't get rpm file");
+            }
+
+            $cache[$project_name . '_' . $package_name] = new RpmXray($rpm, true);
         }
 
         return $cache[$project_name . '_' . $package_name];
@@ -230,85 +316,77 @@ class Fetcher
 
     /**
      * Populates relations, such as
+     *
      * - runtime dependency packages
      * - build dependency packages
      * - provided packages
      * - obsoleted packages
+     * - suggested packages
      * - conflicting packages
      *
-     * @param spec RpmSpecParse object
-     * @param spec Package object
+     * @param object extinfo which is a Package object
+     * @param object package which is a com_meego_package object
      *
      */
-    private function addRelations($spec, $package)
+    private function addRelations($extinfo = null, $package = null)
     {
-        if (is_array($spec->depends))
+        if (is_array($extinfo->depends))
         {
             /* delete relations that are no longer needed */
-            $this->cleanRelations('requires', $spec->depends, $package);
-            foreach ($spec->depends as $dependency)
+            $this->cleanRelations('requires', $extinfo->depends, $package);
+            foreach ($extinfo->depends as $dependency)
             {
                 $this->createRelation('requires', $dependency, $package);
             }
         }
 
-        if (is_array($spec->buildDepends))
+        if (is_array($extinfo->buildDepends))
         {
             /* delete relations that are no longer needed */
-            $this->cleanRelations('buildrequires', $spec->buildDepends, $package);
-            foreach ($spec->buildDepends as $dependency)
+            $this->cleanRelations('buildrequires', $extinfo->buildDepends, $package);
+            foreach ($extinfo->buildDepends as $dependency)
             {
                 $this->createRelation('buildrequires', $dependency, $package);
             }
         }
 
-        if (is_array($spec->provides))
+        if (is_array($extinfo->provides))
         {
             /* delete relations that are no longer needed */
-            $this->cleanRelations('provides', $spec->provides, $package);
-            foreach ($spec->provides as $provided)
+            $this->cleanRelations('provides', $extinfo->provides, $package);
+            foreach ($extinfo->provides as $provided)
             {
                 $this->createRelation('provides', $provided, $package);
             }
         }
 
-        if (is_array($spec->obsoletes))
+        if (is_array($extinfo->obsoletes))
         {
             /* delete relations that are no longer needed */
-            $this->cleanRelations('obsoletes', $spec->obsoletes, $package);
-            foreach ($spec->obsoletes as $obsoleted)
+            $this->cleanRelations('obsoletes', $extinfo->obsoletes, $package);
+            foreach ($extinfo->obsoletes as $obsoleted)
             {
                 $this->createRelation('obsoletes', $obsoleted, $package);
             }
         }
 
-        if (is_array($spec->subpackages))
+        if (is_array($extinfo->suggests))
         {
-            echo "        TODO: subpackages are not yet loaded to database!\n";
-            foreach ($spec->subpackages as $subpackage)
+            /* delete relations that are no longer needed */
+            $this->cleanRelations('suggests', $extinfo->suggests, $package);
+            foreach ($extinfo->suggests as $suggested)
             {
-                echo "Subpackage: " . $subpackage->name . "\n";
-                foreach ($subpackage as $key => $value)
-                {
-                    if (   $key == 'depends'
-                        || $key == 'buildDepends'
-                        || $key == 'provides'
-                        || $key == 'conflicts'
-                        || $key == 'obsoletes')
-                    {
-                        foreach ($value as $stuff)
-                        {
-                            echo ucfirst($key) . ': ' . $stuff->name  . ' ' . $stuff->constraint . ' ' . $stuff->version . "\n";
-                        }
+                $this->createRelation('suggests', $suggested, $package);
+            }
+        }
 
-                    }
-                    else
-                    {
-                        echo ucfirst($key) . ': ' . trim($value) . "\n";
-                    }
-
-                }
-                echo "\n";
+        if (is_array($extinfo->conflicts))
+        {
+            /* delete relations that are no longer needed */
+            $this->cleanRelations('conflicts', $extinfo->conflicts, $package);
+            foreach ($extinfo->conflicts as $conflicted)
+            {
+                $this->createRelation('conflicts', $conflicted, $package);
             }
         }
     }
@@ -424,13 +502,45 @@ class Fetcher
         }
         else
         {
+            // if type is one of these below then add relative to our database
+            // also add its repository to our database
+            switch ($type)
+            {
+                case 'requires':
+                case 'buildrequires':
+                case 'suggests':
+                case 'provides':
+                    $_repository = $this->getRepository($relative->repository);
+                    if ( ! $_repository->guid )
+                    {
+                        $_repository->name = $relative->repository;
+                        echo '        create repository for relative package: ' . $_repository->name . "\n";
+                        // other fields of _repository will be filled when we import (if ever) this relative repository
+                        $_repository->create();
+                    }
+
+                    $_package = $this->getPackage($relative->name, $relative->version, $_repository->id);
+                    if ( ! $_package->guid )
+                    {
+                        $_package->title = $relative->name;
+                        $_package->version = $relative->version;
+                        $_package->repository = $_repository->id;
+                        echo '        create relative package: ' . $_package->name . "\n";
+                        // other fields of _package will be filled when we import (if ever) this relative package
+                        $_package->create();
+                    }
+            }
+
             $relation = new com_meego_package_relation();
             $relation->from = $parent->id;
             $relation->relation = $type;
             $relation->toname = $relative->name;
 
-            /* @todo: this will be set later */
-            // $relation->to = null;
+            if (   is_object($_package)
+                && isset($_package->id))
+            {
+                $relation->to = $_package->id;
+            }
 
             $relation->version = $relative->version;
             $relation->constraint = $relative->constraint;
@@ -491,29 +601,40 @@ class Fetcher
     /**
      * Checks if the package already exists in the database
      *
-     * @param string package name
+     * @param string package title, e.g. x11vnc
      * @param string package version
+     * @param int id of the repository the package belongs to
+     *
      * @return mixed package object
      */
-    private function getPackage($name = null, $version = null, $repository = null) {
+    private function getPackage($title = null, $version = null, $repository = null) {
         $storage = new midgard_query_storage('com_meego_package');
 
         $qc = new midgard_query_constraint_group('AND');
-        $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('name', $storage),
-            '=',
-            new midgard_query_value($name)
-        ));
-        $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('version', $storage),
-            '=',
-            new midgard_query_value($version)
-        ));
-        $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('repository', $storage),
-            '=',
-            new midgard_query_value($repository)
-        ));
+        if (strlen($name))
+        {
+            $qc->add_constraint(new midgard_query_constraint(
+                new midgard_query_property('title', $storage),
+                '=',
+                new midgard_query_value($name)
+            ));
+        }
+        if (strlen($version))
+        {
+            $qc->add_constraint(new midgard_query_constraint(
+                new midgard_query_property('version', $storage),
+                '=',
+                new midgard_query_value($version)
+            ));
+        }
+        if (strlen($repository))
+        {
+            $qc->add_constraint(new midgard_query_constraint(
+                new midgard_query_property('repository', $storage),
+                '=',
+                new midgard_query_value($repository)
+            ));
+        }
 
         $q = new midgard_query_select($storage);
         $q->set_constraint($qc);

@@ -14,9 +14,16 @@
         <property name="license" type="string">
             <description>Package license, e.g. GPLv2+</description>
         </property>
-        <property name="url" type="string" />
+        <property name="homepageurl" type="string">
+            <description>Usually points to an upstream project's web site.</description>
+        </property>
+        <property name="downloadurl" type="string">
+            <description>Direct download link to the package (resides in an OBS repository).</description>
+        </property>
+        <property name="installfileurl" type="string">
+            <description>Link to an installation file that lists needed repositories to fulfill runtime dependencies.</description>
+        </property>
         <property name="bugtracker" type="string" />
-        <!-- Missing: requires, buildrequires, provides, obsoletes -->
     </type>
 
     <type name="com_meego_package_category" table="com_meego_package_category">
@@ -30,7 +37,7 @@
         <property name="from" type="unsigned integer" link="com_meego_package:id" parentfield="frompackage" />
         <property name="relation" type="string" index="yes">
             <!-- TODO: enum -->
-            <description>Relation between packages, for example requires, buildrequires, obsoletes, suggests</description>
+            <description>Relation between packages, for example requires, buildrequires, obsoletes, suggests, conflicts</description>
         </property>
         <property name="group" type="string" field="grouppackage" >
             <description>In case of OR dependencies, the name of the dependency group the relation belongs to</description>
