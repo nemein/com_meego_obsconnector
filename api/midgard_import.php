@@ -72,7 +72,7 @@ class Fetcher
         echo "Repositories:\n";
         $repositories = $this->api->getRepositories($project_name);
         foreach ($repositories as $repo_name) {
-            echo ' -> '.$repo_name."\n";
+            echo "\n -> " . $repo_name . "\n";
 
             //var_dump($project_meta['repositories'][$repo_name]);
 
@@ -106,12 +106,11 @@ class Fetcher
 
                 foreach ($this->api->getPackages($project_name, $repo_name, $arch_name) as $package_name)
                 {
-                    echo '   -> ' . ++$this->package_counter . ': ' . $package_name . "\n";
+                    echo "\n   -> package #" . ++$this->package_counter . ': ' . $package_name . "\n";
 
                     foreach($this->api->getBinaryList($project_name, $repo_name, $arch_name, $package_name) as $file_name)
                     {
-
-                        echo '     -> ' . ++$this->build_counter . ': ' . $file_name . "\n";
+                        echo '     -> binary #' . ++$this->build_counter . ': ' . $file_name . "\n";
 
                         $extinfo = $this->api->getPackageWithInformation($project_name, $repo_name, $arch_name, $package_name, $file_name);
 
@@ -426,14 +425,14 @@ class Fetcher
             foreach ($results as $relation) {
                 echo '        check if ' . $parent->name . ' still ' . $type . ': ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
                 foreach ($relatives as $relative) {
-                    //echo '        Compare: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . ' <<<---->>> ' . $relative->name . ' ' . $relative->constraint . ' ' . $relative->version . "\n";
+                    //echo '            Compare: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . ' <<<---->>> ' . $relative->name . ' ' . $relative->constraint . ' ' . $relative->version . "\n";
                     if (   ! ($relation->toname == $relative->name
                         && $relation->constraint == $relative->constraint
                         && $relation->version == $relative->version )) {
-                        //echo '        mark deleted ' . $relation->id . "\n";
+                        //echo '            mark deleted ' . $relation->id . "\n";
                         $_deleted[$relation->guid] = $relation->id;
                     } else {
-                        //echo '        mark kept: ' . $relation->id . "\n";
+                        //echo '            mark kept: ' . $relation->id . "\n";
                         unset($_deleted[$relation->guid]);
                         break;
                     }
@@ -611,12 +610,12 @@ class Fetcher
         $storage = new midgard_query_storage('com_meego_package');
 
         $qc = new midgard_query_constraint_group('AND');
-        if (strlen($name))
+        if (strlen($title))
         {
             $qc->add_constraint(new midgard_query_constraint(
                 new midgard_query_property('title', $storage),
                 '=',
-                new midgard_query_value($name)
+                new midgard_query_value($title)
             ));
         }
         if (strlen($version))
