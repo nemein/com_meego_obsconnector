@@ -9,7 +9,6 @@ class com_meego_obsconnector_API
     private $host = null;
     private $http = null;
 
-
     public function __construct($login = null, $password = null, $host = 'api.pub.meego.com')
     {
         $this->host = $host;
@@ -28,6 +27,8 @@ class com_meego_obsconnector_API
         if (   $login
             && $password)
         {
+            $this->login = $login;
+            $this->password = $password;
             $this->http->setAuthentication($login, $password);
         }
     }
@@ -464,13 +465,45 @@ class com_meego_obsconnector_API
      * @param string project person's home project, e.g. home:ferenc
      * @param string repository name of the repo, e.g. meego_1.1_extras_handset
      * @param string architecture e.g. i586 or armv7l
-     * @param string package name of the package, e.g. gtk-xfce-engine-2.6.0-1.1.rpm (see getPublished)
-     * @param string version of the package, e.g. 2.6.0
+     * @param string full package name, e.g. gtk-xfce-engine-2.6.0-1.1.rpm (see getPublished)
      *
-     * @return string local path of the binary file
+     * @return string URL of the install file
      */
     public function getInstallFileURL($project = null, $repository = null, $architecture = null, $fullpackagename = null)
     {
         return 'https://' . $this->host . '/published' . '/' . $project . '/' . $repository . '/' . $architecture . '/' . $fullpackagename . '?view=ymp';
     }
+
+    /**
+     * Returns a link for package download
+     *
+     * @param string project person's home project, e.g. home:ferenc
+     * @param string repository name of the repo, e.g. meego_1.1_extras_handset
+     * @param string architecture e.g. i586 or armv7l
+     * @param string package name, e.g. gtk-xfce-engine
+     * @param string full name of the file, e.g. gtk-xfce-engine-2.6.0-1.1.rpm (see getPublished)
+     *
+     * @return string URL of the package
+     */
+    public function getDownloadURL($project = null, $repository = null, $architecture = null, $package = null, $fullpackagename = null)
+    {
+        return 'https://' . $this->host . '/build' . '/' . $project . '/' . $repository . '/' . $architecture . '/' . $package . '/' . $fullpackagename;
+    }
+
+    /**
+     * Returns a link for package download with authentication credentials
+     *
+     * @param string project person's home project, e.g. home:ferenc
+     * @param string repository name of the repo, e.g. meego_1.1_extras_handset
+     * @param string architecture e.g. i586 or armv7l
+     * @param string package name, e.g. gtk-xfce-engine
+     * @param string full name of the file, e.g. gtk-xfce-engine-2.6.0-1.1.rpm (see getPublished)
+     *
+     * @return string URL of the package
+     */
+    public function getAuthDownloadURL($project = null, $repository = null, $architecture = null, $package = null, $fullpackagename = null)
+    {
+        return 'https://' . $this->http->getAuthentication() . $this->host . '/build' . '/' . $project . '/' . $repository . '/' . $architecture . '/' . $package . '/' . $fullpackagename;
+    }
+
 }

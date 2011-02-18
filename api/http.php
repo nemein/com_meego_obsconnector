@@ -22,6 +22,11 @@ class com_meego_obsconnector_HTTP
         $this->auth = $user.':'.$password.'@';
     }
 
+    public function getAuthentication()
+    {
+        return $this->auth;
+    }
+
     public function get($url)
     {
         $context = stream_context_create(array(

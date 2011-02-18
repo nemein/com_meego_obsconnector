@@ -124,8 +124,13 @@ class Fetcher
                         $package->description = $extinfo->description;
                         $package->repository = $repo->id;
 
-                        // add the drect download link
-                        $package->downloadurl = $this->download_repo_prefix . '/' . str_replace('home:', 'home:/', $project_name) . '/' . $repo_name . '/' . $arch_name . '/' . $file_name;
+                        $repo_arch_name = $arch_name;
+                        if ($arch_name == 'armv7el')
+                        {
+                            // the armv7el repository name is different on the repository server than in the API
+                            $repo_arch_name = 'armv7l';
+                        }
+                        $package->downloadurl = $this->download_repo_prefix . '/' . str_replace('home:', 'home:/', $project_name) . '/' . $repo_name . '/' . $repo_arch_name . '/' . $file_name;
 
                         // get the install file URL
                         $package->installfileurl = $this->api->getInstallFileURL($project_name, $repo_name, $arch_name, $package_name, $file_name);
