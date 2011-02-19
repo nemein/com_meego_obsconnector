@@ -79,7 +79,7 @@ class Fetcher
 
             //var_dump($project_meta['repositories'][$repo_name]);
 
-            foreach ($this->api->getArchitectures($project_name, $repo_name) as $arch_name)
+            foreach ($this->api->getBuildArchitectures($project_name, $repo_name) as $arch_name)
             {
                 echo "\n  -> " . $arch_name . "\n";
 
@@ -107,16 +107,44 @@ class Fetcher
                 }
                 echo ' (' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
 
-                foreach ($this->api->getPackages($project_name, $repo_name, $arch_name) as $package_name)
+                foreach ($this->api->getBuiltPackages($project_name, $repo_name, $arch_name) as $package_name)
                 {
                     echo "\n   -> package #" . ++$this->package_counter . ': ' . $package_name . "\n";
 
-                    foreach($this->api->getBinaryList($project_name, $repo_name, $arch_name, $package_name) as $file_name)
+                    foreach($this->api->getBuiltBinaryList($project_name, $repo_name, $arch_name, $package_name) as $file_name)
                     {
                         echo "\n     -> binary #" . ++$this->build_counter . ': ' . $file_name . "\n";
 
+                        // the getBuiltBinaryList will also return binary names that are
+                        // built for different architecture
+                        // we should skip these binaries except the noarch ones
+                        $chunks = explode('.', $file_name);
+
+                        $bin_arch = '';
+
+                        if (count($chunks) >= 2)
+                        {
+                            $bin_arch = $chunks[count($chunks) - 2];
+
+                            if ($bin_arch == 'armv7l')
+                            {
+                                // fix the inconsistency between the published repo and the API
+                                $bin_arch = 'armv7el';
+                            }
+
+                            if (   $bin_arch != 'src'
+                                && $bin_arch != $arch_name)
+                            {
+                                if ($bin_arch != 'noarch')
+                                {
+                                    echo '        skip arch: ' . $bin_arch . ' (' . $file_name . ")\n";
+                                    continue;
+                                }
+                            }
+                        }
+
                         // creates or updates a package in the database
-                        $package = $this->createPackage($project_name, $repo->id, $repo_name, $arch_name, $package_name, $file_name);
+                        $package = $this->createPackage($project_name, $repo->id, $repo_name, $arch_name, $package_name, $file_name, $bin_arch);
 
                         $screenshot_names = array_filter
                         (
@@ -176,7 +204,7 @@ class Fetcher
      *
      * @return object package object
      */
-    public function createPackage($project_name = null, $repo_id = null, $repo_name = null, $arch_name = null, $package_name = null, $file_name = null, $extinfo = null)
+    public function createPackage($project_name = null, $repo_id = null, $repo_name = null, $arch_name = null, $package_name = null, $file_name = null, $repo_arch_name = null)
     {
         if (   $project_name
             && $repo_name
@@ -184,7 +212,6 @@ class Fetcher
             && $package_name
             && $file_name)
         {
-
             // get fill package info via OBS API
             $extinfo = $this->api->getPackageWithFullInformation($project_name, $repo_name, $arch_name, $package_name, $file_name);
         }
@@ -208,22 +235,10 @@ class Fetcher
             $package->description = $extinfo->description;
             $package->repository = $repo_id;
 
-            $repo_arch_name = $arch_name;
-
-            if ($arch_name == 'armv7el')
-            {
-                // the armv7el repository name is different on the repository server than in the API
-                $repo_arch_name = 'armv7l';
-            }
-
-            // determine file extension
-            $extension = preg_replace('/.*\.(.*)/', '\1', $file_name);
-
             // if the package is a source package then the downloadurl is slightly different
             // also change the title a bit
-            if (strrpos($file_name, '.src.' . $extension))
+            if ($repo_arch_name == 'src')
             {
-                $repo_arch_name = 'src';
                 $package->title = $package->title . '-src';
             }
 
@@ -302,9 +317,6 @@ class Fetcher
                         echo '        package is in relation but "to" field is already set. relation id: ' . $relation->id . "\n";
                         continue;
                     }
-
-                    // make sure if we update
-                    // if both the related and the current package share the same architecture
 
                     // get the related package object
                     $related_package = new com_meego_package();
