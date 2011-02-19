@@ -92,16 +92,31 @@ class com_meego_obsconnector_API
     }
 
     /**
-     * Retrives a list of architectures avaialable i na certain repository
+     * Retrives a list of _build_ architectures avaialable in a certain repository
      *
      * @param string project person's home project, e.g. home:ferenc
      * @param string repository name of the repo, e.g. meego_1.1_extras_handset
      *
      * @return array of architectures
      */
-    public function getArchitectures($project, $repository)
+    public function getBuildArchitectures($project, $repository)
     {
         $txt = $this->http->get('/build/' . $project . '/' . $repository);
+        return $this->parseDirectoryXML($txt);
+    }
+
+    /**
+     * Retrives a list of _published_ architectures avaialable in a certain repository
+     *
+     * @param string project person's home project, e.g. home:ferenc
+     * @param string repository name of the repo, e.g. meego_1.1_extras_handset
+     *
+     * @return array of architectures
+     */
+    public function getPublishedArchitectures($project, $repository)
+    {
+        // @fix: this actually lists directories, not architectures
+        $txt = $this->http->get('/published/' . $project . '/' . $repository);
         return $this->parseDirectoryXML($txt);
     }
 
@@ -114,9 +129,24 @@ class com_meego_obsconnector_API
      *
      * @return array of packages
      */
-    public function getPackages($project, $repository, $architecture)
+    public function getBuiltPackages($project, $repository, $architecture)
     {
         $txt = $this->http->get('/build/' . $project . '/' . $repository . '/' . $architecture);
+        return $this->parseDirectoryXML($txt);
+    }
+
+    /**
+     * Retrieves a list of __built__ package names (note: names only, without version numbers)
+     *
+     * @param string project person's home project, e.g. home:ferenc
+     * @param string repository name of the repo, e.g. meego_1.1_extras_handset
+     * @param string architecture e.g. i586 or armv7l
+     *
+     * @return array of packages
+     */
+    public function getPublishedPackages($project, $repository, $architecture)
+    {
+        $txt = $this->http->get('/published/' . $project . '/' . $repository . '/' . $architecture);
         return $this->parseDirectoryXML($txt);
     }
 
@@ -130,7 +160,7 @@ class com_meego_obsconnector_API
      *
      * @return array of binaries produced for that package
      */
-    public function getBinaryList($project = null, $repository = null, $architecture = null, $package = null)
+    public function getBuiltBinaryList($project = null, $repository = null, $architecture = null, $package = null)
     {
         $txt = $this->http->get('/build/' . $project . '/' . $repository . '/' . $architecture . '/' . $package);
         return $this->parseBinaryXML($txt);
@@ -148,6 +178,9 @@ class com_meego_obsconnector_API
     public function getPublishedBinaries($project, $repository, $architecture)
     {
         $txt = $this->getPublished($project, $repository, $architecture);
+
+var_dump($txt);
+
         return $this->parseDirectoryXML($txt);
     }
 
