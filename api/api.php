@@ -190,7 +190,7 @@ class com_meego_obsconnector_API
      *
      * @return object Package object with info filled in
      */
-    public function getPackageWithInformation($project = null, $repository = null, $architecture = null, $package = null, $filename = null)
+    public function getPackageWithFullInformation($project = null, $repository = null, $architecture = null, $package = null, $filename = null)
     {
         $txt = $this->http->get('/build/' . $project . '/' . $repository . '/' . $architecture . '/' . $package . '/' . $filename . '?view=fileinfo_ext');
 
@@ -229,15 +229,6 @@ class com_meego_obsconnector_API
         $retval = array();
         foreach ($_xml->binary as $binary) {
             $filename = strval($binary['filename']);
-            $extension = preg_replace('/.*\.(.*)/', '\1', $filename);
-            // skip source packages
-            // for RPM source package ends with .src.rpm
-            // for Debian:
-            if (strrpos($filename, '.src.' . $extension))
-            {
-                echo '     -> skip source binary: ' . $filename . "\n";
-                continue;
-            }
             $retval[] = $filename;
         }
         return $retval;
@@ -266,6 +257,9 @@ class com_meego_obsconnector_API
         $retval->release = strval($_xml->release);
 
         // not part of mgdschema
+        $retval->arch = strval($_xml->arch);
+
+        // not part of mgdschema
         $retval->size = strval($_xml->size);
 
         $retval->summary = strval($_xml->summary);
@@ -275,6 +269,14 @@ class com_meego_obsconnector_API
         {
             foreach ($_xml->requires_ext as $required)
             {
+                if (   $required->providedby['name'] == $retval->name
+                    && $required->providedby['version'] == $retval->version
+                    && $required->providedby['release'] == $retval->release
+                    && $required->providedby['arch'] == $retval->arch)
+                {
+                    // the package requires itself; no way, but it still happens (see cdparanoia-libs for example)
+                    continue;
+                }
                 if ($required->providedby['name'])
                 {
                     $_name = strval($required->providedby['name']);
@@ -290,11 +292,14 @@ class com_meego_obsconnector_API
                     $dependency = new Dependency($_name, $_constraint, $_version);
 
                     // educated guess about the exact filename of the dependency
-                    $_filename = $_name . '-' . $_version . '-' . $_release . '.' . $extension;
+                    $_filename = $_name . '-' . $_version . '-' . $_release . '.' . $_arch . '.' . $extension;
 
-                    // we may use this somewhere in the UI
+                    $dependency->release = $_release;
+                    $dependency->project = strval($required->providedby['project']);
                     $dependency->downloadurl = $this->download_repo_prefix . '/' . $_project . '/' . $_repository . '/' . $_arch . '/' . $_filename;
                     $dependency->repository = $_repository;
+                    $dependency->arch = $_arch;
+                    $dependency->filename = $_filename;
 
                     $retval->depends[$_name] = $dependency;
                 }
