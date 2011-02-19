@@ -227,9 +227,13 @@ class com_meego_obsconnector_API
     {
         $_xml = simplexml_load_string($xml);
         $retval = array();
-        foreach ($_xml->binary as $binary) {
-            $filename = strval($binary['filename']);
-            $retval[] = $filename;
+
+        if (count($_xml->binary))
+        {
+            foreach ($_xml->binary as $binary) {
+                $filename = strval($binary['filename']);
+                $retval[] = $filename;
+            }
         }
         return $retval;
     }
