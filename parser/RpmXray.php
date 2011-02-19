@@ -96,7 +96,8 @@ class RpmXray extends Parser {
         $infoneeded = array (
             'license',
             'url',
-            'group'
+            'group',
+            'arch'
         );
 
         foreach($infoneeded as $key)
