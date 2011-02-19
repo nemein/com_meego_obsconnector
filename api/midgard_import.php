@@ -116,7 +116,7 @@ class Fetcher
                         echo "\n     -> binary #" . ++$this->build_counter . ': ' . $file_name . "\n";
 
                         // creates or updates a package in the database
-                        $this->createPackage($project_name, $repo->id, $repo_name, $arch_name, $package_name, $file_name);
+                        $package = $this->createPackage($project_name, $repo->id, $repo_name, $arch_name, $package_name, $file_name);
 
                         $screenshot_names = array_filter
                         (
@@ -197,9 +197,6 @@ class Fetcher
 
         // get a com_meego_package instance
         $package = $this->getPackage($file_name, $repo_id);
-
-//        echo "get package: $file_name from repo: $repo_id\n";
-//        echo "we got: $package->name\n";
 
         if (   $package
             && $repo_id
