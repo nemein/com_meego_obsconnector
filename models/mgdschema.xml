@@ -63,7 +63,7 @@
             <description>Pretty name for the repository</description>
         </property>
         <property name="arch" type="string">
-            <description>Arch, example: armel</description>
+            <description>Arch, example: armv7el</description>
         </property>
         <property name="url" type="string">
             <description>Repository URL</description>
