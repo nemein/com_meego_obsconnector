@@ -164,7 +164,6 @@ class Fetcher
                         catch (RuntimeException $e)
                         {
                             echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
-                            die;
                         }
                     }
                 }
@@ -242,9 +241,9 @@ class Fetcher
             {
                 $rpmxray = new RpmXray($package->downloadurl);
             }
-            catch (RuntimeException $e) {
+            catch (RuntimeException $e)
+            {
                 echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
-                die;
             }
 
             if (is_object($rpmxray))
