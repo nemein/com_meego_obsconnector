@@ -23,6 +23,16 @@ class Package {
     var $version = '';
 
     /**
+     * release ID
+     */
+    var $release = '';
+
+    /**
+     * architecture
+     */
+    var $arch = '';
+
+    /**
      * RPM spec      : Summary:
      * Debian control: N/A
      * @todo: this is needed although debian has no specific field
@@ -103,6 +113,12 @@ class Package {
      *
      */
     var $repository = '';
+
+    /**
+     * Name of the OBS project that holds the package
+     *
+     */
+    var $project = '';
 
     /**
      * @param name of the package
