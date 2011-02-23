@@ -222,24 +222,33 @@ class Fetcher
         }
 
         // get a com_meego_package instance
-        $package = $this->getPackage($file_name, $repo_id);
+        $package = $this->getPackageByName($file_name, $repo_id);
 
         if (   $package
             && $repo_id
             && $extinfo)
         {
-            $package->name = $file_name;
+            if ( ! $package->guid )
+            {
+                $package->name = $file_name;
+                $package->repository = $repo_id;
+            }
             $package->title = $extinfo->name;
             $package->version = $extinfo->version;
             $package->summary = $extinfo->summary;
             $package->description = $extinfo->description;
-            $package->repository = $repo_id;
 
             // if the package is a source package then the downloadurl is slightly different
             // also change the title a bit
             if ($repo_arch_name == 'src')
             {
                 $package->title = $package->title . '-src';
+            }
+
+            if ($repo_arch_name == 'armv7el')
+            {
+                // fix the inconsistency between the published repo and the API
+                $repo_arch_name = 'armv7l';
             }
 
             // direct download url
@@ -330,7 +339,7 @@ class Fetcher
                     {
                         // we can safely update the to field of this relation
                         echo '        package is in relation with ' . $relation->from . ', update "to" field. relation id:' . $relation->id . "\n";
-                        $_relation = new com_meego_package_relation($relation->id);
+                        $_relation = new com_meego_package_relation($relation->guid);
                         $_relation->to = $package->id;
                         $_relation->update();
                     }
@@ -339,7 +348,7 @@ class Fetcher
             }
 
             // populate all kinds of package relations to our database
-            $this->addRelations($extinfo, $package);
+            $this->addRelations($extinfo, $package, $repo_id);
         }
 
         return $package;
@@ -457,7 +466,7 @@ class Fetcher
      * @param object package which is a com_meego_package object
      *
      */
-    private function addRelations($extinfo = null, $package = null)
+    private function addRelations($extinfo = null, $package = null, $repo_id = null)
     {
         if (is_array($extinfo->depends))
         {
@@ -465,7 +474,7 @@ class Fetcher
             $this->cleanRelations('requires', $extinfo->depends, $package);
             foreach ($extinfo->depends as $dependency)
             {
-                $this->createRelation('requires', $dependency, $package);
+                $this->createRelation('requires', $dependency, $package, $repo_id);
             }
         }
 
@@ -594,7 +603,7 @@ class Fetcher
      * @param object relative object that is in some relation with package
      * @param object parent package object
      */
-    private function createRelation($type, $relative, $parent)
+    private function createRelation($type, $relative, $parent, $repo_id = null)
     {
         $storage = new midgard_query_storage('com_meego_package_relation');
 
@@ -640,10 +649,12 @@ class Fetcher
             $relation = new com_meego_package_relation();
             $relation->from = $parent->id;
             $relation->relation = $type;
-            $relation->toname = $relative->name;
+            $relation->toname = $relative->title;
 
-            if (   is_object($_package)
-                && isset($_package->id))
+            // check if the relative has already been imported
+            // if yes, then set relation->to to the relative's ID
+            $_package = $this->getPackageByTitle($relative->title, $repo_id);
+            if ($_package->guid)
             {
                 $relation->to = $_package->id;
             }
@@ -655,10 +666,10 @@ class Fetcher
         /* @todo: this might actually be $this->getCategory($dependency->group); */
         $relation->group = $parent->group;
 
-        if (! isset($relation->guid))
+        if (! $relation->guid)
         {
             $_res = $relation->create();
-            echo '        ' . $relation->relation . ': ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
+            echo '        ' . $relation->relation . ': ' . $relation->toname . ' (package id: ' . $relation->to . ')' . $relation->constraint . ' ' . $relation->version . "\n";
         }
         else
         {
@@ -716,14 +727,15 @@ class Fetcher
     }
 
     /**
-     * Checks if the package already exists in the database
+     * Gets a package by its name
+     * Returns an empty com_meego_package instance if the package does not exist
      *
      * @param string package name, e.g. cdparanoia-libs-10.2-1.1.i586.rpm
      * @param int id of the repository the package belongs to
      *
      * @return mixed package object
      */
-    private function getPackage($name = null, $repository = null) {
+    private function getPackageByName($name = null, $repository = null) {
         $storage = new midgard_query_storage('com_meego_package');
 
         $qc = new midgard_query_constraint_group('AND');
@@ -758,6 +770,52 @@ class Fetcher
         }
         return $package;
     }
+
+    /**
+     * Gets a package by its title
+     * Returns an empty com_meego_package instance if the package does not exist
+     *
+     * @param string package title, e.g. cdparanoia-libs
+     * @param int id of the repository the package belongs to
+     *
+     * @return mixed package object
+     */
+    private function getPackageByTitle($title = null, $repository = null) {
+        $storage = new midgard_query_storage('com_meego_package');
+
+        $qc = new midgard_query_constraint_group('AND');
+        if (   strlen($title)
+            && $repository > 0)
+        {
+            $qc->add_constraint(new midgard_query_constraint(
+                new midgard_query_property('title', $storage),
+                '=',
+                new midgard_query_value($title)
+            ));
+            $qc->add_constraint(new midgard_query_constraint(
+                new midgard_query_property('repository', $storage),
+                '=',
+                new midgard_query_value($repository)
+            ));
+        }
+
+        $q = new midgard_query_select($storage);
+        $q->set_constraint($qc);
+        $q->execute();
+
+        $results = $q->list_objects();
+
+        if (count($results))
+        {
+            $package = $results[0];
+        }
+        else
+        {
+            $package = new com_meego_package();
+        }
+        return $package;
+    }
+
 }
 
 $filepath = ini_get("midgard.configuration_file");

@@ -331,6 +331,7 @@ var_dump($txt);
                     // educated guess about the exact filename of the dependency
                     $_filename = $_name . '-' . $_version . '-' . $_release . '.' . $_arch . '.' . $extension;
 
+                    $dependency->title = $_name;
                     $dependency->release = $_release;
                     $dependency->project = strval($required->providedby['project']);
                     $dependency->downloadurl = $this->download_repo_prefix . '/' . $_project . '/' . $_repository . '/' . $_arch . '/' . $_filename;

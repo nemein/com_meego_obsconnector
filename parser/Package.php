@@ -13,8 +13,14 @@ class Package {
     /**
      * RPM spec      : Name:
      * Debian control: Package @todo: maybe Source too?
+     * e.g. amrwb-7.0.0.3-9.1.i586.rpm
      */
     var $name = '';
+
+    /**
+     * e.g. amrwb
+     */
+    var $title = '';
 
     /**
      * RPM spec      : Version:
