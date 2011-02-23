@@ -243,10 +243,12 @@ var_dump($txt);
         $_xml = simplexml_load_string($xml);
 
         $retval = array();
-        foreach ($_xml->entry as $entry) {
-            $retval[] = strval($entry['name']);
+        if (count($_xml->entry))
+        {
+            foreach ($_xml->entry as $entry) {
+                $retval[] = strval($entry['name']);
+            }
         }
-
         return $retval;
     }
 
