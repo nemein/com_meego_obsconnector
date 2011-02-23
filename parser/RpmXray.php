@@ -11,10 +11,10 @@
  *
  */
 
-require_once("Parser.php");
 require_once("Dependency.php");
+require_once("../api/http.php");
 
-class RpmXray extends Parser {
+class RpmXray {
 
     /**
      * Package sepcific attributes
@@ -44,31 +44,32 @@ class RpmXray extends Parser {
      */
     var $location = null;
 
+
+    /**
+     * HTTP interface
+     */
+    var $http = null;
+
     /**
      * Constructor
      */
-    function __construct($location = '', $debug = false)
+    function __construct($protocol = 'http', $host = null, $uri = null, $debug = false)
     {
-        if (! strlen($location))
+        if ( ! $host )
         {
-            throw new RuntimeException('No location given for thr RpmXray');
+            throw new RuntimeException('No host given for RpmXray');
         }
 
-        // location can be any URI, ie. http://..... will work too
-        $this->location = $location;
+        if ( ! $uri )
+        {
+            throw new RuntimeException('No uri given for RpmXray');
+        }
 
-        parent::__construct($this->location, '');
+        $this->location = $protocol . '://' . $host . '/' . $uri;
 
         $this->_flag_debug = $debug;
 
         $this->xray();
-
-        // delete the local file at $location
-        //unlink($location);
-
-        fclose($this->handle);
-
-        parent::__destruct();
     }
 
     /**
