@@ -12,15 +12,17 @@ class Fetcher
     private $project_name = null;
     private $package_counter = 0;
     private $build_counter = 0;
+
     // @todo: move to this standard component configuration file
-    private $download_repo_prefix = 'http://repo.pub.meego.com';
+    private $download_repo_protocol = 'http';
+    private $download_repo_host = 'repo.pub.meego.com';
 
     /**
      * @todo: docs
      */
     public function __construct()
     {
-        if ( ! file_exists(dirname(__FILE__).'/config.ini') )
+        if ( ! file_exists(dirname(__FILE__) . '/config.ini') )
         {
             // @TODO:
             // This could be uncommented if we could get list of publisihed projects
@@ -252,7 +254,8 @@ class Fetcher
             }
 
             // direct download url
-            $package->downloadurl = $this->download_repo_prefix . '/' . str_replace('home:', 'home:/', $project_name) . '/' . $repo_name . '/' . $repo_arch_name . '/' . $file_name;
+            $_uri = str_replace('home:', 'home:/', $project_name) . '/' . $repo_name . '/' . $repo_arch_name . '/' . $file_name;
+            $package->downloadurl = $this->download_repo_protocol . '://' . $this->download_repo_host . '/' . $_uri;
 
             // get the install file URL
             $package->installfileurl = $this->api->getInstallFileURL($project_name, $repo_name, $arch_name, $package_name, $file_name);
@@ -263,7 +266,7 @@ class Fetcher
             // for some info we need a special xray
             try
             {
-                $rpmxray = new RpmXray($package->downloadurl);
+                $rpmxray = new RpmXray($this->download_repo_protocol, $this->download_repo_host, $_uri);
             }
             catch (RuntimeException $e)
             {
