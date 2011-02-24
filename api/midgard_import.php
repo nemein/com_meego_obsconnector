@@ -24,13 +24,6 @@ class Fetcher
     {
         if ( ! file_exists(dirname(__FILE__) . '/config.ini') )
         {
-            // @TODO:
-            // This could be uncommented if we could get list of publisihed projects
-            // via the /public route
-
-            //echo "Importing only public repositories\n";
-            //$this->api = new com_meego_obsconnector_API();
-
             // for now we bail out if there is no config.ini with login and password details
             throw new RuntimeException('Please create config.ini file with "login", "password" and, optionally, "host" keys');
         }
@@ -55,8 +48,11 @@ class Fetcher
      */
     public function scan_all_projects()
     {
-        $projects = $this->api->getProjects();
+        // get all published projects
+        $projects = $this->api->getPublishedProjects();
         $i = 0;
+        // iterate through each project to get all its repositories and
+        // eventually all available packages within the repositories
         foreach ($projects as $project_name)
         {
             echo '#' . ++$i . ' Project: ' . $project_name . "\n";
@@ -70,130 +66,161 @@ class Fetcher
      */
     public function go($project_name)
     {
+        // get meta info about a project. this info consists of the following:
+        // project name, title, description,
+        // people involved,
+        // repositories (published and non-published)
         $project_meta = $this->api->getProjectMeta($project_name);
 
-        echo "Repositories in $project_name:\n";
-        $repositories = $this->api->getRepositories($project_name);
+        // check if the project is already recorded in our database
+        $project = $this->getProject($project_name);
 
-        foreach ($repositories as $repo_name)
+        // set properties
+        $project->name = $project_meta['name'];
+        $project->title = $project_meta['title'];
+        $project->description = $project_meta['description'];
+
+        if ($project->guid)
         {
-            echo "\n -> " . $repo_name . "\n";
+            echo 'Update project record: ' . $project->name;
+            $project->update();
+        }
+        else
+        {
+            echo 'Create project record: ' . $project->name;
+            $project->create();
+        }
+        echo ' (' . $project->title . ', ' . $project->description . ")\n";
 
-            //var_dump($project_meta['repositories'][$repo_name]);
+        if ($project->id)
+        {
+            // get all repositories this project has published
+            echo "\nRepositories in $project->name:\n";
+            $repositories = $this->api->getPublishedRepositories($project->name);
 
-            foreach ($this->api->getBuildArchitectures($project_name, $repo_name) as $arch_name)
+            // iterate through each and every published repository
+            // and dig out the packages
+            foreach ($repositories as $repo_name)
             {
-                echo "\n  -> " . $arch_name . "\n";
+                echo "\n -> " . $repo_name . "\n";
 
-                $repo = $this->getRepository($repo_name, $arch_name);
-
-                $repo->name = $repo_name;// . '_' . $arch_name;
-                $repo->title = $repo_name . ' (for ' . $arch_name . ')';
-                $repo->arch = $arch_name;
-                $repo->url = '/published/' . $project_name . '/' . $repo_name . '/' . $arch_name;
-
-                $repo->os = $project_meta['repositories'][$repo_name]['os'];
-                $repo->osversion = $project_meta['repositories'][$repo_name]['osversion'];
-                $repo->osgroup = $project_meta['repositories'][$repo_name]['osgroup'];
-                $repo->osux = $project_meta['repositories'][$repo_name]['osux'];
-
-                if ( ! $repo->guid )
+                // get all available architectures within this repository
+                foreach ($this->api->getBuildArchitectures($project->name, $repo_name) as $arch_name)
                 {
-                    echo '     create: ' . $repo->name;
-                    $repo->create();
-                }
-                else
-                {
-                    echo '     update: ' . $repo->name;
-                    $repo->update();
-                }
-                echo ' (' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
+                    echo "\n  -> " . $arch_name . "\n";
 
-                foreach ($this->api->getBuiltPackages($project_name, $repo_name, $arch_name) as $package_name)
-                {
-                    echo "\n   -> package #" . ++$this->package_counter . ': ' . $package_name . "\n";
+                    // get a com_meego_repository object
+                    $repo = $this->getRepository($repo_name, $arch_name);
 
-                    foreach($this->api->getBuiltBinaryList($project_name, $repo_name, $arch_name, $package_name) as $file_name)
+                    // fill in properties of the repo object
+                    $repo->name = $repo_name;
+                    $repo->title = $repo_name . ' (for ' . $arch_name . ')';
+                    $repo->arch = $arch_name;
+                    $repo->project = $project->id;
+
+                    $repo->os = $project_meta['repositories'][$repo_name]['os'];
+                    $repo->osversion = $project_meta['repositories'][$repo_name]['osversion'];
+                    $repo->osgroup = $project_meta['repositories'][$repo_name]['osgroup'];
+                    $repo->osux = $project_meta['repositories'][$repo_name]['osux'];
+
+                    if ( ! $repo->guid )
                     {
-                        echo "\n     -> binary #" . ++$this->build_counter . ': ' . $file_name . "\n";
+                        echo '     create: ' . $repo->name;
+                        $repo->create();
+                    }
+                    else
+                    {
+                        echo '     update: ' . $repo->name;
+                        $repo->update();
+                    }
+                    echo ' (' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
 
-                        // the getBuiltBinaryList will also return binary names that are
-                        // built for different architecture
-                        // we should skip these binaries except the noarch ones
-                        $chunks = explode('.', $file_name);
+                    foreach ($this->api->getBuiltPackages($project->name, $repo_name, $arch_name) as $package_name)
+                    {
+                        echo "\n   -> package #" . ++$this->package_counter . ': ' . $package_name . "\n";
 
-                        $bin_arch = '';
-
-                        if (count($chunks) >= 2)
+                        foreach($this->api->getBuiltBinaryList($project->name, $repo_name, $arch_name, $package_name) as $file_name)
                         {
-                            $bin_arch = $chunks[count($chunks) - 2];
+                            echo "\n     -> binary #" . ++$this->build_counter . ': ' . $file_name . "\n";
 
-                            if ($bin_arch == 'armv7l')
-                            {
-                                // fix the inconsistency between the published repo and the API
-                                $bin_arch = 'armv7el';
-                            }
+                            // the getBuiltBinaryList will also return binary names that are
+                            // built for different architecture
+                            // we should skip these binaries except the noarch ones
+                            $chunks = explode('.', $file_name);
 
-                            if (   $bin_arch != 'src'
-                                && $bin_arch != $arch_name)
+                            $bin_arch = '';
+
+                            if (count($chunks) >= 2)
                             {
-                                if ($bin_arch != 'noarch')
+                                $bin_arch = $chunks[count($chunks) - 2];
+
+                                if ($bin_arch == 'armv7l')
                                 {
-                                    echo '        skip arch: ' . $bin_arch . ' (' . $file_name . ")\n";
-                                    continue;
+                                    // fix the inconsistency between the published repo and the API
+                                    $bin_arch = 'armv7el';
+                                }
+
+                                if (   $bin_arch != 'src'
+                                    && $bin_arch != $arch_name)
+                                {
+                                    if ($bin_arch != 'noarch')
+                                    {
+                                        echo '        skip arch: ' . $bin_arch . ' (' . $file_name . ")\n";
+                                        continue;
+                                    }
                                 }
                             }
-                        }
 
-                        // creates or updates a package in the database
-                        $package = $this->createPackage($project_name, $repo->id, $repo_name, $arch_name, $package_name, $file_name, $bin_arch);
+                            // creates or updates a package in the database
+                            $package = $this->createPackage($project->name, $repo->id, $repo_name, $arch_name, $package_name, $file_name, $bin_arch);
 
-                        $screenshot_names = array_filter
-                        (
-                            $this->api->getPackageSourceFiles($project_name, $package_name),
+                            $screenshot_names = array_filter
+                            (
+                                $this->api->getPackageSourceFiles($project->name, $package_name),
 
-                            function($name)
-                            {
-                                $_marker = 'screenshot.png';
-                                return strpos($name, $_marker) === (strlen($name) - strlen($_marker));
-                            }
-                        );
-
-                        foreach ($screenshot_names as $name)
-                        {
-                            $fp = $this->api->getPackageSourceFile($project_name, $package_name, $name);
-
-                            if ($fp)
-                            {
-                                $attachment = $package->create_attachment($name, $name, "image/png");
-
-                                if ($attachment)
+                                function($name)
                                 {
-                                    $blob = new midgard_blob($attachment);
+                                    $_marker = 'screenshot.png';
+                                    return strpos($name, $_marker) === (strlen($name) - strlen($_marker));
+                                }
+                            );
 
-                                    $handler = $blob->get_handler('wb');
+                            foreach ($screenshot_names as $name)
+                            {
+                                $fp = $this->api->getPackageSourceFile($project->name, $package_name, $name);
 
-                                    fwrite($handler, stream_get_contents($fp));
-                                    fclose($fp);
+                                if ($fp)
+                                {
+                                    $attachment = $package->create_attachment($name, $name, "image/png");
 
-                                    fclose($handler);
-                                    $attachment->update();
+                                    if ($attachment)
+                                    {
+                                        $blob = new midgard_blob($attachment);
+
+                                        $handler = $blob->get_handler('wb');
+
+                                        fwrite($handler, stream_get_contents($fp));
+                                        fclose($fp);
+
+                                        fclose($handler);
+                                        $attachment->update();
+                                    }
                                 }
                             }
-                        }
 
-                        //
-                        // @todo: get the icon from the package if exists there
-                        //
-                        try
-                        {
-                            // check the filelist of the package that can be obtained via an OBS API call
-                            // download the package locally if it has a promising icon in it
-                            // $rpm = $this->getRpm($project_name, $repo_name, $arch_name, $package_name);
-                        }
-                        catch (RuntimeException $e)
-                        {
-                            echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                            //
+                            // @todo: get the icon from the package if exists there
+                            //
+                            try
+                            {
+                                // check the filelist of the package that can be obtained via an OBS API call
+                                // download the package locally if it has a promising icon in it
+                                // $rpm = $this->getRpm($project->name, $repo_name, $arch_name, $package_name);
+                            }
+                            catch (RuntimeException $e)
+                            {
+                                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                            }
                         }
                     }
                 }
@@ -688,12 +715,52 @@ class Fetcher
     }
 
     /**
+     * Checks if a project already exists in the database
+     * If the project exists then it returns its object
+     * Otherwise it returns a blank com_meego_project object
+     *
+     * @param string project name
+     *
+     * @return mixed com_meego_project object
+     */
+    private function getProject($name = null)
+    {
+        $storage = new midgard_query_storage('com_meego_project');
+
+        // name should be unique
+        $qc = new midgard_query_constraint(
+            new midgard_query_property('name', $storage),
+            '=',
+            new midgard_query_value($project_meta['name'])
+        );
+
+        $q = new midgard_query_select($storage);
+        $q->set_constraint($qc);
+        $q->execute();
+
+        $results = $q->list_objects();
+
+        if (count($results))
+        {
+            $project = $results[0];
+        }
+        else
+        {
+            $project = new com_meego_project();
+        }
+
+        return $project;
+    }
+
+    /**
      * Checks if a repository already exists in the database
+     * If the repository exists then it returns its object
+     * Otherwise it returns a blank com_meego_repository object
      *
      * @param string repository name, e.g meego_1.1_core_handset
      * @param strinh architecture, e.g. i586
      *
-     * @return mixed repo object
+     * @return mixed com_meego_repository object
      */
     private function getRepository($name, $arch)
     {
