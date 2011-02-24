@@ -13,8 +13,8 @@
         <property name="repoid" use="com_meego_repository:id" />
         <property name="reponame" use="com_meego_repository:name" />
         <property name="repotitle" use="com_meego_repository:title" />
-        <property name="repourl" use="com_meego_repository:url" />
         <property name="repoarch" use="com_meego_repository:arch" />
+        <property name="repoproject" use="com_meego_repository:project" />
     </view>
 
 </Schema>
