@@ -33,7 +33,7 @@ class com_meego_obsconnector_API
         }
     }
 
-    public function getProjects()
+    public function getPublishedProjects()
     {
         $txt = $this->getPublished();
         return $this->parseDirectoryXML($txt);
@@ -85,7 +85,7 @@ class com_meego_obsconnector_API
         return $this->getPackageSourceFile($project, $package, $spec_name);
     }
 
-    public function getRepositories($project)
+    public function getPublishedRepositories($project)
     {
         $txt = $this->getPublished($project);
         return $this->parseDirectoryXML($txt);
@@ -478,7 +478,7 @@ var_dump($txt);
     public function downloadBinary($project = null, $repository = null, $architecture = null, $fullpackagename = null)
     {
         $path = '/tmp/' . $fullpackagename;
-        $handle = @fopen($path, 'wb');
+        $handle = $this->http->get_as_stream($path);
 
         if ($handle === false)
         {
