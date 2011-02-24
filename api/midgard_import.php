@@ -254,7 +254,7 @@ class Fetcher
             }
 
             // direct download url
-            $_uri = str_replace('home:', 'home:/', $project_name) . '/' . $repo_name . '/' . $repo_arch_name . '/' . $file_name;
+            $_uri = str_replace(':', ':/', $project_name) . '/' . str_replace(':', ':/', $repo_name) . '/' . $repo_arch_name . '/' . $file_name;
             $package->downloadurl = $this->download_repo_protocol . '://' . $this->download_repo_host . '/' . $_uri;
 
             // get the install file URL
