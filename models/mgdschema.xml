@@ -65,8 +65,8 @@
         <property name="arch" type="string">
             <description>Arch, example: armv7el</description>
         </property>
-        <property name="url" type="string">
-            <description>Repository URL</description>
+        <property name="project" type="unsigned integer" link="com_meego_project:id"  parentfield="project">
+            <description>Id of the project this repository belongs to</description>
         </property>
         <property name="os" type="string">
             <description>Name of the OS this repository is made for, example: meego</description>
@@ -82,6 +82,21 @@
         </property>
         <property name="disabledownload" type="bool">
             <description>Disable direct downloads for this repository</description>
+        </property>
+    </type>
+
+    <type name="com_meego_project" table="com_meego_project">
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="name" type="string" index="yes" unique="yes">
+            <description>A unique name for the project</description>
+        </property>
+        <property name="title" type="string">
+            <description>Pretty name for the project</description>
+        </property>
+        <property name="description" type="string">
+            <description>Longer description of the project</description>
         </property>
     </type>
 
