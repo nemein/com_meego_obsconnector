@@ -731,7 +731,7 @@ class Fetcher
         $qc = new midgard_query_constraint(
             new midgard_query_property('name', $storage),
             '=',
-            new midgard_query_value($project_meta['name'])
+            new midgard_query_value($name)
         );
 
         $q = new midgard_query_select($storage);
