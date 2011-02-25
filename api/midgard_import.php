@@ -76,9 +76,9 @@ class Fetcher
         $project = $this->getProject($project_name);
 
         // set properties
-        $project->name = $project_meta['name'];
-        $project->title = $project_meta['title'];
-        $project->description = $project_meta['description'];
+        $project->name = trim($project_meta['name']);
+        $project->title = trim($project_meta['title']);
+        $project->description = trim($project_meta['description']);
 
         if ($project->guid)
         {
