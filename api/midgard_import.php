@@ -110,7 +110,7 @@ class Fetcher
                     echo "\n  -> " . $arch_name . "\n";
 
                     // get a com_meego_repository object
-                    $repo = $this->getRepository($repo_name, $arch_name);
+                    $repo = $this->getRepository($repo_name, $arch_name, $project->id);
 
                     // fill in properties of the repo object
                     $repo->name = $repo_name;
@@ -758,11 +758,12 @@ class Fetcher
      * Otherwise it returns a blank com_meego_repository object
      *
      * @param string repository name, e.g meego_1.1_core_handset
-     * @param strinh architecture, e.g. i586
+     * @param string architecture, e.g. i586
+     * @param integer project id, e.g. 1
      *
      * @return mixed com_meego_repository object
      */
-    private function getRepository($name, $arch)
+    private function getRepository($name, $arch, $project_id)
     {
         $storage = new midgard_query_storage('com_meego_repository');
 
@@ -776,6 +777,11 @@ class Fetcher
             new midgard_query_property('arch', $storage),
             '=',
             new midgard_query_value($arch)
+        ));
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('project', $storage),
+            '=',
+            new midgard_query_value($project_id)
         ));
 
         $q = new midgard_query_select($storage);
