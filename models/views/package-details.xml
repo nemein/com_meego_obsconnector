@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Schema xmlns="http://www.midgard-project.org/repligard/1.4">
+
+    <view name="com_meego_package_details" table="com_meego_package">
+        <join type="left" class="com_meego_repository">
+            <condition left="com_meego_package:repository" right="com_meego_repository:id" />
+        </join>
+        <join type="left" class="com_meego_package_category">
+            <condition left="com_meego_package:category" right="com_meego_package_category:id" />
+        </join>
+        <join type="left" class="com_meego_project">
+            <condition left="com_meego_repository:project" right="com_meego_project:id" />
+        </join>
+        <property name="packageid" use="com_meego_package:id">
+            <description>Id of the package</description>
+        </property>
+        <property name="packagename" use="com_meego_package:name">
+            <description>Full name of the package, example: libacl-devel-2.2.49-12.1.armv7l.rpm</description>
+        </property>
+        <property name="packagetitle" use="com_meego_package:title">
+            <description>Short name of the package, example: libacl-devel</description>
+        </property>
+        <property name="packagedownloadurl" use="com_meego_package:downloadurl">
+            <description>Direct download URL for the package</description>
+        </property>
+        <property name="packageinstallfileurl" use="com_meego_package:installfileurl">
+            <description>Direct download URL for the ymp file to install all required repositories and fulfill dependencies</description>
+        </property>
+        <property name="packagecategory" use="com_meego_package:category">
+            <description>Id of the category the package belongs to</description>
+        </property>
+        <property name="packagecategoryname" use="com_meego_package_category:name">
+            <description>Name of the category the package belongs to, example: Daemons</description>
+        </property>
+        <property name="repoid" use="com_meego_repository:id">
+            <description>Id of the repository the package belongs to</description>
+        </property>
+        <property name="reponame" use="com_meego_repository:name">
+            <description>Name for the repository, example: meego_1.1_extras_handset</description>
+        </property>
+        <property name="repotitle" use="com_meego_repository:title">
+            <description>Pretty name for the repository, example: meego_1.1_extras_handset (for armv7el)</description>
+        </property>
+        <property name="repoarch" use="com_meego_repository:arch">
+            <description>Architecture the repository is built for, example: armv7el</description>
+        </property>
+        <property name="repoos" use="com_meego_repository:os">
+            <description>Name of the OS the repository is made for, example: meego</description>
+        </property>
+        <property name="repoosversion" use="com_meego_repository:osversion">
+            <description>Version of the OS the repository is made for, example: 1.0</description>
+        </property>
+        <property name="repoosgroup" use="com_meego_repository:osgroup">
+            <description>Name of the group the repository belongs to within the OS, example: core</description>
+        </property>
+        <property name="repoosux" use="com_meego_repository:osux">
+            <description>Name of the user experience the repository belongs to within the group, example: netbook</description>
+        </property>
+        <property name="repoproject" use="com_meego_repository:project">
+            <description>Id of the project the repository belongs to</description>
+        </property>
+        <property name="repoprojectname" use="com_meego_project:name">
+            <description>Name of the project the repository belongs to, example: home:fal</description>
+        </property>
+        <property name="repoprojecttitle" use="com_meego_project:title">
+            <description>Pretty name of the project the repository belongs to, example: fal's Home Project</description>
+        </property>
+    </view>
+
+</Schema>
