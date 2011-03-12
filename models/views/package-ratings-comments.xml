@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Schema xmlns="http://www.midgard-project.org/repligard/1.4">
+
+    <view name="com_meego_package_ratings" table="com_meego_package">
+
+        <join type="left" class="com_meego_ratings_rating">
+            <condition left="com_meego_package:guid" right="com_meego_ratings_rating:to" />
+        </join>
+
+<!--
+        depends on https://github.com/midgardproject/midgard-core/issues#issue/86
+
+        <join type="left" class="com_meego_comments_comment_author">
+            <condition left="com_meego_ratings_rating:comment" right="com_meego_comments_comment_author:commentid" />
+        </join>
+
+        <property name="authorfirstname" use="com_meego_comments_comment_author:authorfirstname" />
+        <property name="authorlastname" use="com_meego_comments_comment_author:authorlastname" />
+-->
+
+        <property name="id" use="com_meego_package:id" />
+        <property name="guid" use="com_meego_package:guid" />
+        <property name="title" use="com_meego_package:title" />
+        <property name="name" use="com_meego_package:name" />
+        <property name="rating" use="com_meego_ratings_rating:rating" />
+        <property name="commentid" use="com_meego_ratings_rating:comment" />
+
+    </view>
+
+    <view name="com_meego_package_ratings_comments" extends="com_meego_package_ratings" table="com_meego_ratings_rating">
+
+        <join type="left" class="com_meego_comments_comment">
+            <condition left="com_meego_ratings_rating:comment" right="com_meego_comments_comment:id" />
+        </join>
+
+        <property name="commentid" use="com_meego_comments_comment:id" />
+        <property name="comment" use="com_meego_comments_comment:content" />
+    </view>
+
+</Schema>
