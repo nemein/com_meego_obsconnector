@@ -14,11 +14,20 @@
         <property name="packageid" use="com_meego_package:id">
             <description>Id of the package</description>
         </property>
+        <property name="packageguid" use="com_meego_package:guid">
+            <description>GUID of the package</description>
+        </property>
         <property name="packagename" use="com_meego_package:name">
             <description>Full name of the package, example: libacl-devel-2.2.49-12.1.armv7l.rpm</description>
         </property>
         <property name="packagetitle" use="com_meego_package:title">
             <description>Short name of the package, example: libacl-devel</description>
+        </property>
+        <property name="packageversion" use="com_meego_package:version">
+            <description>Version number of the package, example: 2.2.49</description>
+        </property>
+        <property name="packagedescription" use="com_meego_package:description">
+            <description>Long description of the package</description>
         </property>
         <property name="packagedownloadurl" use="com_meego_package:downloadurl">
             <description>Direct download URL for the package</description>
