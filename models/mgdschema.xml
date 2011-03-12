@@ -1,15 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Schema xmlns="http://www.midgard-project.org/repligard/1.4">
+
+    <!--
+        all imported packages
+    -->
     <type name="com_meego_package" table="com_meego_package" parent="com_meego_repository">
-        <property name="id" type="unsigned integer" primaryfield="id" index="yes" />
-        <property name="name" type="string" index="yes" />
-        <property name="title" type="string" index="yes" />
-        <property name="repository" type="unsigned integer" link="com_meego_repository:id" parentfield="repository" />
-        <property name="version" type="string" index="yes" />
-        <property name="summary" type="text" />
-        <property name="description" type="text" />
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="name" type="string" index="yes">
+            <description>Full name of a package, e.g. emacs-mercurial-1.7.1-3.4.armv7l.rpm</description>
+        </property>
+        <property name="title" type="string" index="yes">
+            <description>Clean name of the package, e.g. anki</description>
+        </property>
+        <property name="repository" type="unsigned integer" link="com_meego_repository:id" parentfield="repository">
+            <description>id of the repository this package can be found</description>
+        </property>
+        <property name="version" type="string" index="yes">
+            <description>Package versio, e.g. 3.1</description>
+        </property>
+        <property name="summary" type="text">
+            <description>A short summary about the package</description>
+        </property>
+        <property name="description" type="text">
+            <description>A longer description of the package</description>
+        </property>
         <property name="category" type="unsigned integer" link="com_meego_package_category:id">
-            <description>Package category, e.g. applications/internet</description>
+            <description>id of a package category</description>
         </property>
         <property name="license" type="string">
             <description>Package license, e.g. GPLv2+</description>
@@ -23,18 +41,71 @@
         <property name="installfileurl" type="string">
             <description>Link to an installation file that lists needed repositories to fulfill runtime dependencies.</description>
         </property>
-        <property name="bugtracker" type="string" />
+        <property name="bugtracker" type="string">
+            <descriotion>URL of the package's bugtracker.</descriotion>
+        </property>
     </type>
 
+    <!--
+        simple base categories that are configurable
+        this table needs to be populated by hand; see category controller
+    -->
+    <type name="com_meego_package_basecategory" table="com_meego_package_basecategory">
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="name" type="string" index="yes">
+            <description>Human readable name of the category</description>
+        </property>
+        <property name="description" type="text">
+            <description>A short description -if any- of the base category</description>
+        </property>
+    </type>
+
+    <!--
+        categories that are retrived directly from packages
+        each category must be related to one or more base category
+    -->
     <type name="com_meego_package_category" table="com_meego_package_category">
-        <property name="id" type="unsigned integer" primaryfield="id" index="yes" />
-        <property name="up" type="unsigned integer" link="com_meego_package_category:id" upfield="up" />
-        <property name="name" type="string" index="yes" />
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="up" type="unsigned integer" link="com_meego_package_category:id" upfield="up">
+            <description>The parent of a category. It is 0 if category has no parent.</description>
+        </property>
+        <property name="name" type="string" index="yes">
+            <description>Human readable name of the category</description>
+        </property>
+        <property name="description" type="text">
+            <description>A short description -if any- of the category</description>
+        </property>
     </type>
 
+    <!--
+         relations between package categories and base categories
+    -->
+    <type name="com_meego_package_category_relation" table="com_meego_package_category_relation" parent="com_meego_package_basecategory">
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="basecategory" type="unsigned integer" link="com_meego_package_basecategory:id">
+            <description>The id of the base category</description>
+        </property>
+        <property name="packagecategory" type="unsigned integer" link="com_meego_package_category:id">
+            <description>The id of the package category</description>
+        </property>
+    </type>
+
+    <!--
+        stores package relations, e.g. runtime dependencies
+    -->
     <type name="com_meego_package_relation" table="com_meego_package_relation" parent="com_meego_package">
-        <property name="id" type="unsigned integer" primaryfield="id" index="yes" />
-        <property name="from" type="unsigned integer" link="com_meego_package:id" parentfield="frompackage" />
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="from" type="unsigned integer" link="com_meego_package:id" parentfield="frompackage">
+            <description>Specifies the id of the originator of this relation</description>
+        </property>
         <property name="relation" type="string" index="yes">
             <!-- TODO: enum -->
             <description>Relation between packages, for example requires, buildrequires, obsoletes, suggests, conflicts</description>
@@ -43,7 +114,7 @@
             <description>In case of OR dependencies, the name of the dependency group the relation belongs to</description>
         </property>
         <property name="to" type="unsigned integer" link="com_meego_package:id" field="topackage">
-            <description>Relation to package if it is in database</description>
+            <description>Holds the id of a package if it is in the database</description>
         </property>
         <property name="toname" type="string">
             <description>Relation to package name, regardless if package is in database</description>
@@ -52,6 +123,9 @@
         <property name="constraint" type="string" dbtype="string(2)" index="yes" />
     </type>
 
+    <!--
+        the repositories where packages belong to
+    -->
     <type name="com_meego_repository" table="com_meego_repository">
         <property name="id" type="unsigned integer" primaryfield="id" index="yes">
             <description>Local non-replication-safe database identifier</description>
@@ -66,7 +140,7 @@
             <description>Arch, example: armv7el</description>
         </property>
         <property name="project" type="unsigned integer" link="com_meego_project:id"  parentfield="project">
-            <description>Id of the project this repository belongs to</description>
+            <description>id of the project this repository belongs to</description>
         </property>
         <property name="os" type="string">
             <description>Name of the OS this repository is made for, example: meego</description>
@@ -85,6 +159,9 @@
         </property>
     </type>
 
+    <!--
+        the projects where repositories belong to
+    -->
     <type name="com_meego_project" table="com_meego_project">
         <property name="id" type="unsigned integer" primaryfield="id" index="yes">
             <description>Local non-replication-safe database identifier</description>
@@ -93,22 +170,25 @@
             <description>A unique name for the project</description>
         </property>
         <property name="title" type="string">
-            <description>Pretty name for the project</description>
+            <description>Pretty name for the project, e.g. home:feri</description>
         </property>
         <property name="description" type="string">
-            <description>Longer description of the project</description>
+            <description>Longer description of the project, e.g. feri's Home Project</description>
         </property>
     </type>
 
+    <!--
+        not in use yet
+    -->
     <type name="com_meego_repository_debian" extends="com_meego_repository">
         <property name="suite" type="string">
-            <description>Suite, eg diablo</description>
+            <description>Suite, e.g. diablo</description>
         </property>
         <property name="dist" type="string">
-            <description>Dist, eg extras-devel</description>
+            <description>Dist, e.g. extras-devel</description>
         </property>
         <property name="component" type="string">
-            <description>Component, eg free</description>
+            <description>Component, e.g. free</description>
         </property>
     </type>
 </Schema>
