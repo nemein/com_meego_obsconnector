@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Schema xmlns="http://www.midgard-project.org/repligard/1.4">
+
+    <view name="com_meego_package_repository_project" table="com_meego_repository">
+        <join type="left" class="com_meego_project">
+            <condition left="com_meego_repository:project" right="com_meego_project:id" />
+        </join>
+        <property name="repoid" use="com_meego_repository:id">
+            <description>Id of the repository</description>
+        </property>
+        <property name="reponame" use="com_meego_repository:name">
+            <description>Name for the repository, example: meego_1.1_extras_handset</description>
+        </property>
+        <property name="repotitle" use="com_meego_repository:title">
+            <description>Pretty name for the repository, example: meego_1.1_extras_handset (for armv7el)</description>
+        </property>
+        <property name="repoarch" use="com_meego_repository:arch">
+            <description>Architecture the repository is built for, example: armv7el</description>
+        </property>
+        <property name="repoos" use="com_meego_repository:os">
+            <description>Name of the OS the repository is made for, example: meego</description>
+        </property>
+        <property name="repoosversion" use="com_meego_repository:osversion">
+            <description>Version of the OS the repository is made for, example: 1.0</description>
+        </property>
+        <property name="repoosgroup" use="com_meego_repository:osgroup">
+            <description>Name of the group the repository belongs to within the OS, example: core</description>
+        </property>
+        <property name="repoosux" use="com_meego_repository:osux">
+            <description>Name of the user experience the repository belongs to within the group, example: netbook</description>
+        </property>
+        <property name="repodisabledownload" use="com_meego_repository:disabledownload">
+            <description>Flag to indicate if the repository is downloadable or not</description>
+        </property>
+        <property name="projectid" use="com_meego_repository:project">
+            <description>Id of the project the repository belongs to</description>
+        </property>
+        <property name="projectname" use="com_meego_project:name">
+            <description>Name of the project the repository belongs to, example: home:fal</description>
+        </property>
+        <property name="projecttitle" use="com_meego_project:title">
+            <description>Pretty name of the project the repository belongs to, example: fal's Home Project</description>
+        </property>
+    </view>
+
+</Schema>
