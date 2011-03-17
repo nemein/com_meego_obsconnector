@@ -74,6 +74,9 @@
         <property name="repoprojecttitle" use="com_meego_project:title">
             <description>Pretty name of the project the repository belongs to, example: fal's Home Project</description>
         </property>
+        <property name="repodisabledownload" use="com_meego_repository:disabledownload">
+            <description>Flag to indicate if the repository is downloadable or not</description>
+        </property>
     </view>
 
 </Schema>
