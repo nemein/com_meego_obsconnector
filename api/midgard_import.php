@@ -123,15 +123,15 @@ class Fetcher
                     $repo->osgroup = $project_meta['repositories'][$repo_name]['osgroup'];
                     $repo->osux = $project_meta['repositories'][$repo_name]['osux'];
 
-                    if ( ! $repo->guid )
-                    {
-                        echo '     create: ' . $repo->name;
-                        $repo->create();
-                    }
-                    else
+                    if ($repo->guid)
                     {
                         echo '     update: ' . $repo->name;
                         $repo->update();
+                    }
+                    else
+                    {
+                        echo '     create: ' . $repo->name;
+                        $repo->create();
                     }
                     echo ' (' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
 
@@ -262,6 +262,7 @@ class Fetcher
                 $package->name = $file_name;
                 $package->repository = $repo_id;
             }
+
             $package->title = $extinfo->name;
             $package->version = $extinfo->version;
             $package->summary = $extinfo->summary;
@@ -307,15 +308,15 @@ class Fetcher
                 $package->category = $this->getCategory($rpmxray->group);
             }
 
-            if ( ! $package->guid )
+            if ($package->guid)
             {
-                echo '        create: ' . $package->name . "\n";
-                $package->create();
+                echo '        update: ' . $package->name . '(title: ' . $package->title . ")\n";
+                $package->update();
             }
             else
             {
-                echo '        update: ' . $package->name . "\n";
-                $package->update();
+                echo '        create: ' . $package->name . '(title: ' . $package->title . ")\n";
+                $package->create();
             }
 
             // check if package is referred in a relation
@@ -672,7 +673,7 @@ class Fetcher
 
         if (count($results))
         {
-            $relation = $results[0];
+            $relation = new com_meego_package_relation($results[0]->guid);
         }
         else
         {
@@ -742,7 +743,7 @@ class Fetcher
 
         if (count($results))
         {
-            $project = $results[0];
+            $project = new com_meego_project($results[0]->guid);
         }
         else
         {
@@ -792,7 +793,7 @@ class Fetcher
 
         if (count($results))
         {
-            $repository = $results[0];
+            $repository = new com_meego_repository($results[0]->guid);
         }
         else
         {
@@ -838,7 +839,7 @@ class Fetcher
 
         if (count($results))
         {
-            $package = $results[0];
+            $package = new com_meego_package($results[0]->guid);
         }
         else
         {
@@ -883,7 +884,7 @@ class Fetcher
 
         if (count($results))
         {
-            $package = $results[0];
+            $package = new com_meego_package($results[0]->guid);
         }
         else
         {
