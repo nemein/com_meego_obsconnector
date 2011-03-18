@@ -415,8 +415,17 @@ var_dump($txt);
             $retval['repositories'][strval($repository['name'])]['osgroup'] = '';
             $retval['repositories'][strval($repository['name'])]['osux'] = '';
 
-            // parse the path to determine OS, version, group and UX data
-            $info = explode(':', $repository->path['project']);
+            if ($repository->path['project'] == 'standard')
+            {
+                // parse the project property of path to determine OS, version, group and UX data
+                $info = explode(':', $repository->path['project']);
+            }
+            else
+            {
+                // parse the repository property of path to determine OS, version, group and UX data
+                $info = explode('_', $repository->path['repository']);
+            }
+
             if (is_array($info))
             {
                 if (isset($info[0]))
