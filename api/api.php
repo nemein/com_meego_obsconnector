@@ -178,9 +178,6 @@ class com_meego_obsconnector_API
     public function getPublishedBinaries($project, $repository, $architecture)
     {
         $txt = $this->getPublished($project, $repository, $architecture);
-
-var_dump($txt);
-
         return $this->parseDirectoryXML($txt);
     }
 
@@ -226,7 +223,6 @@ var_dump($txt);
     public function getPackageWithFullInformation($project = null, $repository = null, $architecture = null, $package = null, $filename = null)
     {
         $txt = $this->http->get('/build/' . $project . '/' . $repository . '/' . $architecture . '/' . $package . '/' . $filename . '?view=fileinfo_ext');
-
         $package = $this->parseExtendedInfoXML($txt);
 
         return $package;
@@ -400,13 +396,16 @@ var_dump($txt);
         $retval['name'] = strval($_xml['name']);
         $retval['title'] = strval($_xml->title);
         $retval['description'] = strval($_xml->description);
-        foreach ($_xml->person as $person) {
-            if ($person['role'] == 'maintainer') {
+        foreach ($_xml->person as $person)
+        {
+            if ($person['role'] == 'maintainer')
+            {
                 $retval['maintainer'] = strval($person['userid']);
                 $retval['bugowner'] = strval($person['userid']);
             }
         }
-        foreach ($_xml->repository as $repository) {
+        foreach ($_xml->repository as $repository)
+        {
             $retval['repositories'][strval($repository['name'])]['path'] = strval($repository->path['project']);
 
             // set blank defaults
@@ -466,7 +465,8 @@ var_dump($txt);
     {
         $_xml = simplexml_load_string($xml);
 
-        return array(
+        return array
+        (
             'summary' => strval($_xml->summary),
             'details' => strval($_xml->details),
             'data'    => strval($_xml->data),
