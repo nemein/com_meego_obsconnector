@@ -32,7 +32,17 @@ class com_meego_obsconnector_HTTP
         $context = stream_context_create(array(
             'http' => array_merge($this->more_options, array('method' => 'GET', 'timeout' => 30)),
         ));
-        return file_get_contents($this->buildUrl($url), false, $context);
+
+        $url_to_fetch = $this->buildUrl($url);
+
+        $content = @file_get_contents($url_to_fetch, false, $context);
+
+        if ($content === false)
+        {
+            // failed to fetch content
+            throw new RuntimeException("Failed to fetch " . $url_to_fetch, 990);
+        }
+        return $content;
     }
 
     public function get_as_stream($url)
