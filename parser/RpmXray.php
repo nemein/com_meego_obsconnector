@@ -57,12 +57,12 @@ class RpmXray {
     {
         if ( ! $host )
         {
-            throw new RuntimeException('No host given for RpmXray');
+            throw new RuntimeException('No host given for RpmXray', 1);
         }
 
         if ( ! $uri )
         {
-            throw new RuntimeException('No uri given for RpmXray');
+            throw new RuntimeException('No uri given for RpmXray', 2);
         }
 
         $this->location = $protocol . '://' . $host . '/' . $uri;
@@ -105,7 +105,17 @@ class RpmXray {
         {
             if (array_key_exists(strtoupper($key), $available))
             {
-                $this->$key = trim(shell_exec("rpm -qp --queryformat '%{" . $key . "}\n' " . $this->location));
+                $command = "rpm -qp --queryformat '%{" . $key . "}' " . $this->location;
+                exec($command, $output, $retval);
+
+                // check for return value
+                if ($retval)
+                {
+                    // rpm returned an error, bail out
+                    $error = 'The tool "rpm" returned an error: ' . trim($retval) . ".\n Command failed:\n  " . $command . "\nIt usually means that the location is not available.";
+                    throw new RuntimeException($error, 999);
+                }
+                $this->$key = trim(implode("\n", $output));
             }
         }
 

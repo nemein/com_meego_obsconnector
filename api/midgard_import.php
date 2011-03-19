@@ -125,15 +125,15 @@ class Fetcher
 
                     if ($repo->guid)
                     {
-                        echo '     update: ' . $repo->name;
+                        echo '     update: ';
                         $repo->update();
                     }
                     else
                     {
-                        echo '     create: ' . $repo->name;
+                        echo '     create: ';
                         $repo->create();
                     }
-                    echo ' (' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
+                    echo $repo->name . ' (id: ' . $repo->id . '; ' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
 
                     foreach ($this->api->getBuiltPackages($project->name, $repo_name, $arch_name) as $package_name)
                     {
@@ -173,6 +173,13 @@ class Fetcher
 
                             // creates or updates a package in the database
                             $package = $this->createPackage($project->name, $repo->id, $repo_name, $arch_name, $package_name, $file_name, $bin_arch);
+
+                            if ( ! $package )
+                            {
+                                // we got no package object, usually because we had to delete
+                                // an existing one from database, so go to next binary package
+                                continue;
+                            }
 
                             $screenshot_names = array_filter
                             (
@@ -299,6 +306,21 @@ class Fetcher
             catch (RuntimeException $e)
             {
                 echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+
+                // if there was a problem during xray (with code 999)
+                // then it almost certainly means that the package no longer exists in the repository
+                // so if the package exists in our database then remove it
+                if (   $package->guid
+                    && $e->getCode() == 999)
+                {
+                    // if package deletion is OK then return immediately
+                    $result = $this->deletePackage($package->guid, $package->name);
+
+                    if ($result)
+                    {
+                        return null;
+                    }
+                }
             }
 
             if (is_object($rpmxray))
@@ -893,6 +915,26 @@ class Fetcher
         return $package;
     }
 
+    /**
+     * Deletes a packages from database
+     * Used only if during an update we notice that a package is no longer available in a repositor
+     *
+     * @param guid guid of the package object
+     * @param string name of the package just used for the debug message
+     * @return boolean true if operation succeeded, false otherwise
+     */
+    private function deletePackage($guid, $name)
+    {
+        $retval = false;
+        $package = new com_meego_package($guid);
+
+        if (is_object($package))
+        {
+            echo '        delete: ' . $name . "\n";
+            $retval = $package->delete();
+        }
+        return $retval;
+    }
 }
 
 $filepath = ini_get("midgard.configuration_file");
@@ -902,6 +944,7 @@ $mgd = midgard_connection::get_instance();
 $mgd->open_config($config);
 
 $f = new Fetcher();
+
 if ($argv[1])
 {
     $f->go($argv[1]);
