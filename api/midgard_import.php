@@ -3,7 +3,6 @@ require __DIR__.'/api.php';
 //require __DIR__.'/../parser/RpmSpecParser.php';
 require __DIR__.'/../parser/RpmXray.php';
 
-
 /**
  * @todo: docs
  */
@@ -46,51 +45,88 @@ class Fetcher
      * If no argument (ie. project name) is given when running this script
      * then we go through all available projects
      */
-    public function scan_all_projects()
+    public function scan_all_projects($cleanonly = false)
     {
+        $i = 0;
+
         // get all published projects
         $projects = $this->api->getPublishedProjects();
-        $i = 0;
+
         // iterate through each project to get all its repositories and
         // eventually all available packages within the repositories
         foreach ($projects as $project_name)
         {
-            echo '#' . ++$i . ' Project: ' . $project_name . "\n";
-            echo "--------------------------------------------\n";
-            $this->go($project_name);
+            echo "\n#" . ++$i . ' Project: ' . $project_name . "\n";
+
+            if ($cleanonly)
+            {
+                echo "Requested clean up only\n";
+            }
+
+            echo "---------------------------------------------------------\n";
+
+            $this->go($project_name, $cleanonly);
         }
     }
 
     /**
      * Goes through a project
+     *
+     * @param string OBS project name, e.g. home:feri
+     * @param boolean $cleanonly if true then only clenup will be performed on the local database
+     *                otherwise full import happens
+     *
      */
-    public function go($project_name)
+    public function go($project_name, $cleanonly = false)
     {
-        // get meta info about a project. this info consists of the following:
-        // project name, title, description,
-        // people involved,
-        // repositories (published and non-published)
-        $project_meta = $this->api->getProjectMeta($project_name);
-
         // check if the project is already recorded in our database
         $project = $this->getProject($project_name);
+
+        try
+        {
+            // get meta info about a project. this info consists of the following:
+            // project name, title, description,
+            // people involved,
+            // repositories (published and non-published)
+            $project_meta = $this->api->getProjectMeta($project_name);
+        }
+        catch (RuntimeException $e)
+        {
+            if ($e->getCode() == 990)
+            {
+                // failed to fetch project meta, bail out
+                echo "Failed to fetch meta information of project: $project_name\n";
+                echo "The project may not exist anymore\n";
+
+                if ($project->guid)
+                {
+                    // the project is in our database; so let's delete it
+                    // @todo: $this->deleteProject($project);
+                }
+
+                exit(1);
+            }
+        }
 
         // set properties
         $project->name = trim($project_meta['name']);
         $project->title = trim($project_meta['title']);
         $project->description = trim($project_meta['description']);
 
-        if ($project->guid)
+        if (! $cleanonly)
         {
-            echo 'Update project record: ' . $project->name;
-            $project->update();
+            if ($project->guid)
+            {
+                echo 'Update project record: ' . $project->name;
+                $project->update();
+            }
+            else
+            {
+                echo 'Create project record: ' . $project->name;
+                $project->create();
+            }
+            echo ' (' . $project->title . ', ' . $project->description . ")\n";
         }
-        else
-        {
-            echo 'Create project record: ' . $project->name;
-            $project->create();
-        }
-        echo ' (' . $project->title . ', ' . $project->description . ")\n";
 
         if ($project->id)
         {
@@ -123,25 +159,42 @@ class Fetcher
                     $repo->osgroup = $project_meta['repositories'][$repo_name]['osgroup'];
                     $repo->osux = $project_meta['repositories'][$repo_name]['osux'];
 
-                    if ($repo->guid)
+                    if (! $cleanonly)
                     {
-                        echo '     update: ';
-                        $repo->update();
+                        if ($repo->guid)
+                        {
+                            echo '     update: ';
+                            $repo->update();
+                        }
+                        else
+                        {
+                            echo '     create: ';
+                            $repo->create();
+                        }
+                        echo $repo->name . ' (id: ' . $repo->id . '; ' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
                     }
-                    else
-                    {
-                        echo '     create: ';
-                        $repo->create();
-                    }
-                    echo $repo->name . ' (id: ' . $repo->id . '; ' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
+
+                    $fulllist = array();
 
                     foreach ($this->api->getBuiltPackages($project->name, $repo_name, $arch_name) as $package_name)
                     {
-                        echo "\n   -> package #" . ++$this->package_counter . ': ' . $package_name . "\n";
+                        echo "\n     -> package #" . ++$this->package_counter . ': ' . $package_name . "\n";
 
-                        foreach($this->api->getBuiltBinaryList($project->name, $repo_name, $arch_name, $package_name) as $file_name)
+                        $newlist = $this->api->getBuiltBinaryList($project->name, $repo_name, $arch_name, $package_name);
+
+                        // this list contains all binaries built for all packages in that repo
+                        // we will use it to do a clean up operation once this loop finishes
+                        $fulllist = array_merge($fulllist, $newlist);
+
+                        if ($cleanonly)
                         {
-                            echo "\n     -> binary #" . ++$this->build_counter . ': ' . $file_name . "\n";
+                            // only cleanup is requested so we can go to the next package
+                            continue;
+                        }
+
+                        foreach($newlist as $file_name)
+                        {
+                            echo "\n        -> binary #" . ++$this->build_counter . ': ' . $file_name . "\n";
 
                             // the getBuiltBinaryList will also return binary names that are
                             // built for different architecture
@@ -230,6 +283,10 @@ class Fetcher
                             }
                         }
                     }
+
+                    // now cleanup all the packages from our database
+                    // that are not part of this OBS repository
+                    $this->cleanPackages($repo, $fulllist);
                 }
             }
         }
@@ -314,7 +371,7 @@ class Fetcher
                     && $e->getCode() == 999)
                 {
                     // if package deletion is OK then return immediately
-                    $result = $this->deletePackage($package->guid, $package->name);
+                    $result = $this->deletePackage($package);
 
                     if ($result)
                     {
@@ -332,12 +389,12 @@ class Fetcher
 
             if ($package->guid)
             {
-                echo '        update: ' . $package->name . '(title: ' . $package->title . ")\n";
+                echo '           update: ' . $package->name . '(title: ' . $package->title . ")\n";
                 $package->update();
             }
             else
             {
-                echo '        create: ' . $package->name . '(title: ' . $package->title . ")\n";
+                echo '           create: ' . $package->name . '(title: ' . $package->title . ")\n";
                 $package->create();
             }
 
@@ -364,7 +421,7 @@ class Fetcher
 
             if (! count($relations))
             {
-                echo "        package is not required by others\n";
+                echo "           package is not required by others\n";
             }
             else
             {
@@ -376,7 +433,7 @@ class Fetcher
                 {
                     if ($relation->to != 0)
                     {
-                        echo '        package is in relation but "to" field is already set. relation id: ' . $relation->id . "\n";
+                        echo '           package is in relation but "to" field is already set. relation id: ' . $relation->id . "\n";
                         continue;
                     }
 
@@ -391,7 +448,7 @@ class Fetcher
                     if ($repository_a->arch == $repository_b->arch)
                     {
                         // we can safely update the to field of this relation
-                        echo '        package is in relation with ' . $relation->from . ', update "to" field. relation id:' . $relation->id . "\n";
+                        echo '           package is in relation with ' . $relation->from . ', update "to" field. relation id:' . $relation->id . "\n";
                         $_relation = new com_meego_package_relation($relation->guid);
                         $_relation->to = $package->id;
                         $_relation->update();
@@ -616,7 +673,7 @@ class Fetcher
         {
             foreach ($results as $relation)
             {
-                echo '        check if ' . $parent->title . ' still ' . $type . ': ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
+                echo '           check if ' . $parent->title . ' still ' . $type . ': ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
                 foreach ($relatives as $relative)
                 {
                     //echo '            Compare: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . ' <<<---->>> ' . $relative->name . ' ' . $relative->constraint . ' ' . $relative->version . "\n";
@@ -642,7 +699,7 @@ class Fetcher
                 if (is_object($relation))
                 {
                     $relation->delete();
-                    echo '        delete ' . $type . ' of package ' . $parent->title . ': relation guid: ' . $guid . ' (id: ' . $value . ')' . "\n";
+                    echo '           delete ' . $type . ' of package ' . $parent->title . ': relation guid: ' . $guid . ' (id: ' . $value . ')' . "\n";
                 }
             }
         }
@@ -722,12 +779,12 @@ class Fetcher
         if (! $relation->guid)
         {
             $_res = $relation->create();
-            echo '        ' . $relation->relation . ': ' . $relation->toname . ' (package id: ' . $relation->to . ')' . $relation->constraint . ' ' . $relation->version . "\n";
+            echo '           ' . $relation->relation . ': ' . $relation->toname . ' (package id: ' . $relation->to . ')' . $relation->constraint . ' ' . $relation->version . "\n";
         }
         else
         {
             $_res = $relation->update();
-            echo '        ' . $relation->relation . ' updated: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
+            echo '           ' . $relation->relation . ' updated: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
         }
 
         if ($_res != 'MGD_ERR_OK')
@@ -915,25 +972,142 @@ class Fetcher
         return $package;
     }
 
+
+    /**
+     * Deletes all relations a package is involved in
+     *
+     * @param integer id of the package
+     * @return boolean true if all relations are deleted, false otherwise
+     */
+    private function deleteRelations($id)
+    {
+        $retval = true;
+
+        $storage = new midgard_query_storage('com_meego_package_relation');
+
+        $qc = new midgard_query_constraint_group('OR');
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('from'),
+            '=',
+            new midgard_query_value($id)
+        ));
+        $qc->add_constraint(new midgard_query_constraint(
+            new midgard_query_property('to'),
+            '=',
+            new midgard_query_value($id)
+        ));
+
+        $q = new midgard_query_select($storage);
+        $q->set_constraint($qc);
+        $q->execute();
+
+        $results = $q->list_objects();
+
+        if (count($results))
+        {
+            foreach ($results as $object)
+            {
+                $relation = new com_meego_package_relation($object->guid);
+
+                if (   is_object($relation)
+                    && $relation->delete())
+                {
+                    echo '              deleted relation: ';
+                }
+                else
+                {
+                    echo '              failed to delete relation: ';
+                    $retval = false;
+                    break;
+                }
+                echo  $relation->id . ' (from: ' . $relation->from . ', to: ' . $relation->to .")\n";
+            }
+        }
+
+        return $retval;
+    }
+
     /**
      * Deletes a packages from database
      * Used only if during an update we notice that a package is no longer available in a repositor
      *
-     * @param guid guid of the package object
-     * @param string name of the package just used for the debug message
+     * @param object com_meego_package object
+     *
      * @return boolean true if operation succeeded, false otherwise
      */
-    private function deletePackage($guid, $name)
+    private function deletePackage($package)
     {
         $retval = false;
-        $package = new com_meego_package($guid);
+        //$object = new com_meego_package($guid);
 
         if (is_object($package))
         {
-            echo '        delete: ' . $name . "\n";
-            $retval = $package->delete();
+            // we have to remove all the relations before Midgard is willing
+            // to delete the package
+            $retval = $this->deleteRelations($package->id);
+
+            if ($retval)
+            {
+                $retval = $package->delete();
+
+                if ($retval)
+                {
+                    echo '              deleted: ';
+                }
+            }
         }
+
+        if (! $retval)
+        {
+            echo '              failed to delete package: ';
+        }
+        echo  $package->name . ' (' . $package->guid .")\n";
+
         return $retval;
+    }
+
+    /**
+     * Cleans packages from the database if they are
+     * no longer part of the OBS repository
+     *
+     * @param object repository object from our database
+     * @param array of binaries that are currently part of the OBS repository
+     *
+     */
+    private function cleanPackages($repo = null, $newlist = array())
+    {
+        $found = false;
+
+        echo "\n     cleanup: " . $repo->name . ' (id: ' . $repo->id . '; ' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
+
+        $storage = new midgard_query_storage('com_meego_package');
+
+        $qc = new midgard_query_constraint(
+            new midgard_query_property('repository'),
+            '=',
+            new midgard_query_value($repo->id)
+        );
+
+        $q = new midgard_query_select($storage);
+        $q->set_constraint($qc);
+        $q->execute();
+
+        $oldpackages = $q->list_objects();
+
+        foreach ($oldpackages as $oldpackage)
+        {
+            if (array_search($oldpackage->name, $newlist) === false)
+            {
+                $found = true;
+                // the package is not in the list, so remove it from db
+                $retval = $this->deletePackage($oldpackage);
+            }
+        }
+
+        if (! $found)
+        {
+            echo "              no cleanup needed\n";
+        }
     }
 }
 
@@ -945,11 +1119,34 @@ $mgd->open_config($config);
 
 $f = new Fetcher();
 
-if ($argv[1])
-{
-    $f->go($argv[1]);
-}
-else
-{
-    $f->scan_all_projects();
+switch (count($argv)) {
+    case 1:
+        $f->scan_all_projects(false);
+        break;
+
+    case 2:
+        if ($argv[1] == 'cleanonly')
+        {
+            $f->scan_all_projects(true);
+        }
+        else
+        {
+            $f->go($argv[1], false);
+        }
+        break;
+
+    case 3:
+        if ($argv[2] == 'cleanonly')
+        {
+            $f->go($argv[1], true);
+        }
+        else
+        {
+            $f->go($argv[1], false);
+        }
+        break;
+
+    default:
+        echo "Usage: $argv[0] [cleanup]\n";
+        echo "       $argv[0] project_name [cleanup]\n";
 }
