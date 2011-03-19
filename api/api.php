@@ -205,7 +205,6 @@ class com_meego_obsconnector_API
                 }
             }
         }
-
         return $this->http->get($url);
     }
 
@@ -414,7 +413,7 @@ class com_meego_obsconnector_API
             $retval['repositories'][strval($repository['name'])]['osgroup'] = '';
             $retval['repositories'][strval($repository['name'])]['osux'] = '';
 
-            if ($repository->path['project'] == 'standard')
+            if (strval($repository->path['repository']) == 'standard')
             {
                 // parse the project property of path to determine OS, version, group and UX data
                 $info = explode(':', $repository->path['project']);
