@@ -116,6 +116,7 @@ class RpmXray {
                     throw new RuntimeException($error, 999);
                 }
                 $this->$key = trim(implode("\n", $output));
+                $output = '';
             }
         }
 
