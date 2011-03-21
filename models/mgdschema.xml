@@ -178,6 +178,25 @@
     </type>
 
     <!--
+        calculated download statistics for a package in a repository
+    -->
+
+    <type name="com_meego_packages_statistics_calculated" table="com_meego_packages_statistics_calculated">
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="packagename" type="string" index="yes">
+            <description>The package name</description>
+        </property>
+        <property name="repository" type="unsigned integer" link="com_meego_repository:id"  parentfield="repository">
+            <description>id of the repository this package belongs to</description>
+        </property>
+        <property name="downloads" type="integer">
+            <description>Number of downloads for this package in this repository</description>
+        </property>
+    </type>
+
+    <!--
         not in use yet
     -->
     <type name="com_meego_repository_debian" extends="com_meego_repository">
