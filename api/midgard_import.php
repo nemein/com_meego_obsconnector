@@ -317,6 +317,10 @@ class Fetcher
         // get a com_meego_package instance
         $package = $this->getPackageByFileName($file_name, $repo_id);
 
+echo "filename: " . $file_name . "\n";
+var_dump($package);
+die;
+
         if (   $package
             && $repo_id
             && $extinfo)
@@ -897,7 +901,7 @@ class Fetcher
         $storage = new midgard_query_storage('com_meego_package');
 
         $qc = new midgard_query_constraint_group('AND');
-        if (   strlen($name)
+        if (   strlen($filename)
             && $repository > 0)
         {
             $qc->add_constraint(new midgard_query_constraint(
