@@ -8,9 +8,9 @@
         <join type="left" class="com_meego_package_category">
             <condition left="com_meego_package:category" right="com_meego_package_category:id" />
         </join>
-        <join type="left" class="com_meego_package_downloads_calculated">
-            <condition left="com_meego_package:repository" right="com_meego_package_downloads_calculated:repository" />
-            <condition left="com_meego_package:name" right="com_meego_package_downloads_calculated:packagename" />
+        <join type="left" class="com_meego_package_statistics_calculated">
+            <condition left="com_meego_package:repository" right="com_meego_package_statistics_calculated:repository" />
+            <condition left="com_meego_package:name" right="com_meego_package_statistics_calculated:packagename" />
         </join>
         <property name="packageid" use="com_meego_package:id">
             <description>Id of the package</description>
@@ -21,7 +21,7 @@
         <property name="packagename" use="com_meego_package:name">
             <description>Full name of the package, example: libacl-devel-2.2.49-12.1.armv7l.rpm</description>
         </property>
-        <property name="downloads" use="com_meego_package_downloads_calculated:downloads">
+        <property name="downloads" use="com_meego_package_statistics_calculated:downloads">
             <description>Number of downloads for this package, example: 1234</description>
         </property>
     </view>
