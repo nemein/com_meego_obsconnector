@@ -29,6 +29,9 @@
         <property name="packageversion" use="com_meego_package:version">
             <description>Version number of the package, example: 2.2.49</description>
         </property>
+        <property name="packagesummary" use="com_meego_package:summary">
+            <description>Short description of the package</description>
+        </property>
         <property name="packagedescription" use="com_meego_package:description">
             <description>Long description of the package</description>
         </property>
