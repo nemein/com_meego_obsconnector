@@ -19,7 +19,7 @@
             <description>GUID of the package</description>
         </property>
         <property name="packagename" use="com_meego_package:name">
-            <description>Full name of the package, example: libacl-devel-2.2.49-12.1.armv7l.rpm</description>
+            <description>Name of the package, example: libacl-devel</description>
         </property>
         <property name="downloads" use="com_meego_package_statistics_calculated:downloads">
             <description>Number of downloads for this package, example: 1234</description>
