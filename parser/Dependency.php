@@ -35,9 +35,9 @@ class Dependency extends Package {
 
     /**
      * Constructs a new dependency object
-     * @param name of the package
-     * @param constraint constraint to the version
-     * @param version of the package
+     * @param string name of the package
+     * @param string constraint constraint to the version
+     * @param string version of the package
      */
     function __construct($name = '', $constraint = '', $version = '') {
         parent::__construct($name, $version);
