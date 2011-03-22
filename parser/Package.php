@@ -13,14 +13,19 @@ class Package {
     /**
      * RPM spec      : Name:
      * Debian control: Package @todo: maybe Source too?
-     * e.g. amrwb-7.0.0.3-9.1.i586.rpm
+     * e.g. amrwb
      */
     var $name = '';
 
     /**
-     * e.g. amrwb
+     * e.g. Amrwb the cool app
      */
     var $title = '';
+
+    /**
+     * e.g. amrwb-7.0.0.3-9.1.i586.rpm
+     */
+    var $filename = '';
 
     /**
      * RPM spec      : Version:
@@ -127,8 +132,8 @@ class Package {
     var $project = '';
 
     /**
-     * @param name of the package
-     * @param version of the package
+     * @param string name of the package
+     * @param string version of the package
      */
     function __construct($name = '', $version = '') {
         $this->name = $name;

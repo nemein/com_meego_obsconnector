@@ -315,7 +315,7 @@ class Fetcher
         }
 
         // get a com_meego_package instance
-        $package = $this->getPackageByName($file_name, $repo_id);
+        $package = $this->getPackageByFileName($file_name, $repo_id);
 
         if (   $package
             && $repo_id
@@ -323,11 +323,12 @@ class Fetcher
         {
             if ( ! $package->guid )
             {
-                $package->name = $file_name;
                 $package->repository = $repo_id;
+                $package->filename = $extinfo->filename;
             }
 
-            $package->title = $extinfo->name;
+            $package->name = $extinfo->name;
+            $package->title = $extinfo->title;
             $package->version = $extinfo->version;
             $package->summary = $extinfo->summary;
             $package->description = $extinfo->description;
@@ -389,12 +390,12 @@ class Fetcher
 
             if ($package->guid)
             {
-                echo '           update: ' . $package->name . '(title: ' . $package->title . ")\n";
+                echo '           update: ' . $package->filename . ' (name: ' . $package->name . ")\n";
                 $package->update();
             }
             else
             {
-                echo '           create: ' . $package->name . '(title: ' . $package->title . ")\n";
+                echo '           create: ' . $package->filename . ' (name: ' . $package->name . ")\n";
                 $package->create();
             }
 
@@ -406,7 +407,7 @@ class Fetcher
             $qc->add_constraint(new midgard_query_constraint(
                 new midgard_query_property('toname'),
                 '=',
-                new midgard_query_value($package->title)
+                new midgard_query_value($package->filename)
             ));
             $qc->add_constraint(new midgard_query_constraint(
                 new midgard_query_property('version'),
@@ -653,12 +654,12 @@ class Fetcher
 
         $qc = new midgard_query_constraint_group('AND');
         $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('from', $storage),
+            new midgard_query_property('from'),
             '=',
             new midgard_query_value($parent->id)
         ));
         $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('relation', $storage),
+            new midgard_query_property('relation'),
             '=',
             new midgard_query_value($type)
         ));
@@ -673,11 +674,11 @@ class Fetcher
         {
             foreach ($results as $relation)
             {
-                echo '           check if ' . $parent->title . ' still ' . $type . ': ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
+                echo '           check if ' . $parent->name . ' still ' . $type . ': ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
                 foreach ($relatives as $relative)
                 {
                     //echo '            Compare: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . ' <<<---->>> ' . $relative->name . ' ' . $relative->constraint . ' ' . $relative->version . "\n";
-                    if (   ! ($relation->toname == $relative->title
+                    if (   ! ($relation->toname == $relative->name
                         && $relation->constraint == $relative->constraint
                         && $relation->version == $relative->version ))
                     {
@@ -699,7 +700,7 @@ class Fetcher
                 if (is_object($relation))
                 {
                     $relation->delete();
-                    echo '           delete ' . $type . ' of package ' . $parent->title . ': relation guid: ' . $guid . ' (id: ' . $value . ')' . "\n";
+                    echo '           delete ' . $type . ' of package ' . $parent->name . ': relation guid: ' . $guid . ' (id: ' . $value . ')' . "\n";
                 }
             }
         }
@@ -719,27 +720,27 @@ class Fetcher
 
         $qc = new midgard_query_constraint_group('AND');
         $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('from', $storage),
+            new midgard_query_property('from'),
             '=',
             new midgard_query_value($parent->id)
         ));
         $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('relation', $storage),
+            new midgard_query_property('relation'),
             '=',
             new midgard_query_value($type)
         ));
         $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('toname', $storage),
+            new midgard_query_property('toname'),
             '=',
             new midgard_query_value($relative->name)
         ));
         $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('version', $storage),
+            new midgard_query_property('version'),
             '=',
             new midgard_query_value($relative->version)
         ));
         $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('constraint', $storage),
+            new midgard_query_property('constraint'),
             '=',
             new midgard_query_value($relative->constraint)
         ));
@@ -759,11 +760,12 @@ class Fetcher
             $relation = new com_meego_package_relation();
             $relation->from = $parent->id;
             $relation->relation = $type;
-            $relation->toname = $relative->title;
+            $relation->toname = $relative->name;
 
             // check if the relative has already been imported
             // if yes, then set relation->to to the relative's ID
-            $_package = $this->getPackageByTitle($relative->title, $repo_id);
+            $_package = $this->getPackageByName($relative->name, $repo_id);
+
             if ($_package->guid)
             {
                 $relation->to = $_package->id;
@@ -779,7 +781,7 @@ class Fetcher
         if (! $relation->guid)
         {
             $_res = $relation->create();
-            echo '           ' . $relation->relation . ': ' . $relation->toname . ' (package id: ' . $relation->to . ')' . $relation->constraint . ' ' . $relation->version . "\n";
+            echo '           ' . $relation->relation . ': ' . $relation->toname . ' (package id: ' . $relation->to . ') ' . $relation->constraint . ' ' . $relation->version . "\n";
         }
         else
         {
@@ -849,17 +851,17 @@ class Fetcher
 
         $qc = new midgard_query_constraint_group('AND');
         $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('name', $storage),
+            new midgard_query_property('name'),
             '=',
             new midgard_query_value($name)
         ));
         $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('arch', $storage),
+            new midgard_query_property('arch'),
             '=',
             new midgard_query_value($arch)
         ));
         $qc->add_constraint(new midgard_query_constraint(
-            new midgard_query_property('project', $storage),
+            new midgard_query_property('project'),
             '=',
             new midgard_query_value($project_id)
         ));
@@ -883,15 +885,15 @@ class Fetcher
     }
 
     /**
-     * Gets a package by its name
+     * Gets a package by its file name
      * Returns an empty com_meego_package instance if the package does not exist
      *
-     * @param string package name, e.g. cdparanoia-libs-10.2-1.1.i586.rpm
+     * @param string package filename, e.g. cdparanoia-libs-10.2-1.1.i586.rpm
      * @param int id of the repository the package belongs to
      *
      * @return mixed package object
      */
-    private function getPackageByName($name = null, $repository = null) {
+    private function getPackageByFileName($filename = null, $repository = null) {
         $storage = new midgard_query_storage('com_meego_package');
 
         $qc = new midgard_query_constraint_group('AND');
@@ -899,12 +901,12 @@ class Fetcher
             && $repository > 0)
         {
             $qc->add_constraint(new midgard_query_constraint(
-                new midgard_query_property('name', $storage),
+                new midgard_query_property('filename'),
                 '=',
-                new midgard_query_value($name)
+                new midgard_query_value($filename)
             ));
             $qc->add_constraint(new midgard_query_constraint(
-                new midgard_query_property('repository', $storage),
+                new midgard_query_property('repository'),
                 '=',
                 new midgard_query_value($repository)
             ));
@@ -928,15 +930,15 @@ class Fetcher
     }
 
     /**
-     * Gets a package by its title
+     * Gets a package by its name
      * Returns an empty com_meego_package instance if the package does not exist
      *
-     * @param string package title, e.g. cdparanoia-libs
+     * @param string package name, e.g. cdparanoia-libs
      * @param int id of the repository the package belongs to
      *
      * @return mixed package object
      */
-    private function getPackageByTitle($title = null, $repository = null) {
+    private function getPackageByName($name = null, $repository = null) {
         $storage = new midgard_query_storage('com_meego_package');
 
         $qc = new midgard_query_constraint_group('AND');
@@ -944,12 +946,12 @@ class Fetcher
             && $repository > 0)
         {
             $qc->add_constraint(new midgard_query_constraint(
-                new midgard_query_property('title', $storage),
+                new midgard_query_property('title'),
                 '=',
-                new midgard_query_value($title)
+                new midgard_query_value($name)
             ));
             $qc->add_constraint(new midgard_query_constraint(
-                new midgard_query_property('repository', $storage),
+                new midgard_query_property('repository'),
                 '=',
                 new midgard_query_value($repository)
             ));
@@ -1061,7 +1063,7 @@ class Fetcher
         {
             echo '              failed to delete package: ';
         }
-        echo  $package->name . ' (' . $package->guid .")\n";
+        echo  $package->filename . ' (' . $package->guid .")\n";
 
         return $retval;
     }
@@ -1096,7 +1098,7 @@ class Fetcher
 
         foreach ($oldpackages as $oldpackage)
         {
-            if (array_search($oldpackage->name, $newlist) === false)
+            if (array_search($oldpackage->filename, $newlist) === false)
             {
                 $found = true;
                 // the package is not in the list, so remove it from db

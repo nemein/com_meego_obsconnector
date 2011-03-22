@@ -9,10 +9,13 @@
             <description>Local non-replication-safe database identifier</description>
         </property>
         <property name="name" type="string" index="yes">
-            <description>Full name of a package, e.g. emacs-mercurial-1.7.1-3.4.armv7l.rpm</description>
+            <description>Name of a package, e.g. anki</description>
         </property>
         <property name="title" type="string" index="yes">
-            <description>Clean name of the package, e.g. anki</description>
+            <description>Pretty name of the package, e.g. Anki the game</description>
+        </property>
+        <property name="filename" type="string" index="yes">
+            <description>Full name of a package, e.g. emacs-mercurial-1.7.1-3.4.armv7l.rpm</description>
         </property>
         <property name="repository" type="unsigned integer" link="com_meego_repository:id" parentfield="repository">
             <description>id of the repository this package can be found</description>

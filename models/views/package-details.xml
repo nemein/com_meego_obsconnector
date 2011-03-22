@@ -18,10 +18,13 @@
             <description>GUID of the package</description>
         </property>
         <property name="packagename" use="com_meego_package:name">
-            <description>Full name of the package, example: libacl-devel-2.2.49-12.1.armv7l.rpm</description>
+            <description>Full name of the package, example: libacl-devel</description>
         </property>
         <property name="packagetitle" use="com_meego_package:title">
-            <description>Short name of the package, example: libacl-devel</description>
+            <description>Short name of the package, example: anki the cool game</description>
+        </property>
+        <property name="packagefilename" use="com_meego_package:filename">
+            <description>Full name of the package, example: libacl-devel-2.2.49-12.1.armv7l.rpm</description>
         </property>
         <property name="packageversion" use="com_meego_package:version">
             <description>Version number of the package, example: 2.2.49</description>
