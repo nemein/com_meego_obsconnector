@@ -317,10 +317,6 @@ class Fetcher
         // get a com_meego_package instance
         $package = $this->getPackageByFileName($file_name, $repo_id);
 
-echo "filename: " . $file_name . "\n";
-var_dump($package);
-die;
-
         if (   $package
             && $repo_id
             && $extinfo)
