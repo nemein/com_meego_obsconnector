@@ -234,16 +234,23 @@ class Fetcher
                                 continue;
                             }
 
-                            $screenshot_names = array_filter
-                            (
-                                $this->api->getPackageSourceFiles($project->name, $package_name),
+                            try
+                            {
+                                $screenshot_names = array_filter
+                                (
+                                    $this->api->getPackageSourceFiles($project->name, $package_name),
 
-                                function($name)
-                                {
-                                    $_marker = 'screenshot.png';
-                                    return strpos($name, $_marker) === (strlen($name) - strlen($_marker));
-                                }
-                            );
+                                    function($name)
+                                    {
+                                        $_marker = 'screenshot.png';
+                                        return strpos($name, $_marker) === (strlen($name) - strlen($_marker));
+                                    }
+                                );
+                            }
+                            catch (RuntimeException $e)
+                            {
+                                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                            }
 
                             foreach ($screenshot_names as $name)
                             {
