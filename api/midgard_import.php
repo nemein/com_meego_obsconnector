@@ -50,7 +50,14 @@ class Fetcher
         $i = 0;
 
         // get all published projects
-        $projects = $this->api->getPublishedProjects();
+        try
+        {
+            $projects = $this->api->getPublishedProjects();
+        }
+        catch (RuntimeException $e)
+        {
+            echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+        }
 
         // iterate through each project to get all its repositories and
         // eventually all available packages within the repositories
@@ -132,7 +139,15 @@ class Fetcher
         {
             // get all repositories this project has published
             echo "\nRepositories in $project->name:\n";
-            $repositories = $this->api->getPublishedRepositories($project->name);
+
+            try
+            {
+                $repositories = $this->api->getPublishedRepositories($project->name);
+            }
+            catch (RuntimeException $e)
+            {
+                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+            }
 
             // iterate through each and every published repository
             // and dig out the packages
@@ -140,8 +155,22 @@ class Fetcher
             {
                 echo "\n -> " . $repo_name . "\n";
 
+                try
+                {
+                    $architectures = $this->api->getBuildArchitectures($project->name, $repo_name);
+                }
+                catch (RuntimeException $e)
+                {
+                    echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                }
+
+                if ( ! count($architectures) )
+                {
+                    continue;
+                }
+
                 // get all available architectures within this repository
-                foreach ($this->api->getBuildArchitectures($project->name, $repo_name) as $arch_name)
+                foreach ($architectures as $arch_name)
                 {
                     echo "\n  -> " . $arch_name . "\n";
 
@@ -176,11 +205,32 @@ class Fetcher
 
                     $fulllist = array();
 
-                    foreach ($this->api->getBuiltPackages($project->name, $repo_name, $arch_name) as $package_name)
+                    try
+                    {
+                        $builtpackages = $this->api->getBuiltPackages($project->name, $repo_name, $arch_name);
+                    }
+                    catch (RuntimeException $e)
+                    {
+                        echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                    }
+
+                    if ( ! count($builtpackages))
+                    {
+                        continue;
+                    }
+
+                    foreach ($builtpackages as $package_name)
                     {
                         echo "\n     -> package #" . ++$this->package_counter . ': ' . $package_name . "\n";
 
-                        $newlist = $this->api->getBuiltBinaryList($project->name, $repo_name, $arch_name, $package_name);
+                        try
+                        {
+                            $newlist = $this->api->getBuiltBinaryList($project->name, $repo_name, $arch_name, $package_name);
+                        }
+                        catch (RuntimeException $e)
+                        {
+                            echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                        }
 
                         // this list contains all binaries built for all packages in that repo
                         // we will use it to do a clean up operation once this loop finishes
@@ -254,7 +304,14 @@ class Fetcher
 
                             foreach ($screenshot_names as $name)
                             {
-                                $fp = $this->api->getPackageSourceFile($project->name, $package_name, $name);
+                                try
+                                {
+                                    $fp = $this->api->getPackageSourceFile($project->name, $package_name, $name);
+                                }
+                                catch (RuntimeException $e)
+                                {
+                                    echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                                }
 
                                 if ($fp)
                                 {
@@ -313,7 +370,14 @@ class Fetcher
             && $file_name)
         {
             // get fill package info via OBS API
-            $extinfo = $this->api->getPackageWithFullInformation($project_name, $repo_name, $arch_name, $package_name, $file_name);
+            try
+            {
+                $extinfo = $this->api->getPackageWithFullInformation($project_name, $repo_name, $arch_name, $package_name, $file_name);
+            }
+            catch (RuntimeException $e)
+            {
+                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+            }
         }
         else
         {
@@ -357,8 +421,15 @@ class Fetcher
             $_uri = str_replace(':', ':/', $project_name) . '/' . str_replace(':', ':/', $repo_name) . '/' . $repo_arch_name . '/' . $file_name;
             $package->downloadurl = $this->download_repo_protocol . '://' . $this->download_repo_host . '/' . $_uri;
 
-            // get the install file URL
-            $package->installfileurl = $this->api->getInstallFileURL($project_name, $repo_name, $arch_name, $package_name, $file_name);
+            try
+            {
+                // get the install file URL
+                $package->installfileurl = $this->api->getInstallFileURL($project_name, $repo_name, $arch_name, $package_name, $file_name);
+            }
+            catch (RuntimeException $e)
+            {
+                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+            }
 
             // @todo
             $package->bugtracker = '* TODO *';
@@ -486,7 +557,14 @@ class Fetcher
 
         if ( ! array_key_exists($project_name . '_' . $package_name, $cache) )
         {
-            $spec_stream = $this->api->getPackageSpec($project_name, $package_name);
+            try
+            {
+                $spec_stream = $this->api->getPackageSpec($project_name, $package_name);
+            }
+            catch (RuntimeException $e)
+            {
+                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+            }
 
             if (false === $spec_stream)
             {
@@ -513,7 +591,14 @@ class Fetcher
 
         if ( ! array_key_exists($project_name . '_' . $package_name, $cache) )
         {
-            $rpm = $this->api->downloadBinary($project_name, $repo_name, $arch_name, $package_name);
+            try
+            {
+                $rpm = $this->api->downloadBinary($project_name, $repo_name, $arch_name, $package_name);
+            }
+            catch (RuntimeException $e)
+            {
+                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+            }
 
             if ($rpm === false)
             {
