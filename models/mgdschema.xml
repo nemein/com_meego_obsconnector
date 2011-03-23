@@ -196,6 +196,16 @@
         <property name="downloads" type="integer">
             <description>Number of downloads for this package in this repository</description>
         </property>
+        <property name="ratings" type="integer">
+            <description>Number of ratings for this package in this repository</description>
+        </property>
+        <property name="ratingvalue" type="integer">
+            <description>Average value of ratings for this package in this repository</description>
+        </property>
+        <property name="comments" type="integer">
+            <description>Number of comments for this package in this repository</description>
+        </property>
+
     </type>
 
     <!--

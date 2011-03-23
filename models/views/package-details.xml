@@ -11,6 +11,10 @@
         <join type="left" class="com_meego_project">
             <condition left="com_meego_repository:project" right="com_meego_project:id" />
         </join>
+        <join type="left" class="com_meego_package_statistics_calculated">
+            <condition left="com_meego_package:repository" right="com_meego_package_statistics_calculated:repository" />
+            <condition left="com_meego_package:name" right="com_meego_package_statistics_calculated:packagename" />
+        </join>
         <property name="packageid" use="com_meego_package:id">
             <description>Id of the package</description>
         </property>
@@ -82,6 +86,18 @@
         </property>
         <property name="repodisabledownload" use="com_meego_repository:disabledownload">
             <description>Flag to indicate if the repository is downloadable or not</description>
+        </property>
+        <property name="statscacheddownloads" use="com_meego_package_statistics_calculated:downloads">
+            <description>Number of downloads for the package</description>
+        </property>
+        <property name="statscachedratings" use="com_meego_package_statistics_calculated:ratings">
+            <description>Number of ratings for the package</description>
+        </property>
+        <property name="statscachedratingvalue" use="com_meego_package_statistics_calculated:ratingvalue">
+            <description>Avarage rating for the package</description>
+        </property>
+        <property name="statscachedcomments" use="com_meego_package_statistics_calculated:comments">
+            <description>Number of comments for the package</description>
         </property>
     </view>
 
