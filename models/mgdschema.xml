@@ -187,7 +187,7 @@
     <!--
         calculated download statistics for a package in a repository
     -->
-    <type name="com_meego_package_statistics_calculated" table="com_meego_package_statistics_calculated">
+    <type name="com_meego_package_statistics_calculated" table="com_meego_package_statistics_calculated" metadata="false">
         <property name="id" type="unsigned integer" primaryfield="id" index="yes">
             <description>Local non-replication-safe database identifier</description>
         </property>
