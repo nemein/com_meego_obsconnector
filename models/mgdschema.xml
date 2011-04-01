@@ -122,8 +122,12 @@
         <property name="toname" type="string">
             <description>Relation to package name, regardless if package is in database</description>
         </property>
-        <property name="version" type="string" index="yes" />
-        <property name="constraint" type="string" dbtype="string(2)" index="yes" />
+        <property name="version" type="string" index="yes">
+            <description>Version used in the relation</description>
+        </property>
+        <property name="constraint" type="string" dbtype="char(2)" index="yes">
+            <description>The constraint of the relation, e.g. = or &lt; or &gt;</description>
+        </property>
     </type>
 
     <!--
