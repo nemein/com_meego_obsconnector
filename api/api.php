@@ -422,7 +422,9 @@ class com_meego_obsconnector_API
             }
             else
             {
+                // Might not work with all skinds of exotic repository names...
                 // parse the repository property of path to determine OS, version, group and UX data
+                // @todo: check back the whole tree of the anchestor repositories to determine uses..
                 $info = explode('_', $repository->path['repository']);
             }
 
