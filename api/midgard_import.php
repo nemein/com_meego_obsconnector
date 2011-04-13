@@ -58,8 +58,8 @@ switch ($argv[1])
         {
             case 'obs':
 
-                require __DIR__.'/Fetcher.php';
-                $f  = new Fetcher();
+                require __DIR__.'/OBSFetcher.php';
+                $f  = new OBSFetcher();
 
                 if (isset($argv[3]))
                 {
@@ -86,6 +86,23 @@ switch ($argv[1])
                 }
                 break;
             case 'debian':
+
+                require __DIR__.'/DebianRepositoryFetcher.php';
+                $df  = new DebianRepositoryFetcher();
+
+                if (isset($argv[3]))
+                {
+                    if (    isset($argv[4])
+                        &&  $argv[4] == "cleanonly")
+                    {
+                        $df->go($argv[3], true);
+                    }
+                    else
+                    {
+                        $df->go($argv[3], false);
+                    }
+                }
+
                 break;
             default:
                 usage($cmd);
