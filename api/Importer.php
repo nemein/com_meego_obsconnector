@@ -502,7 +502,8 @@ abstract class Importer
      *
      * @return mixed package object
      */
-    public function getPackageByTitle($title = null, $repository = null) {
+    public function getPackageByTitle($title = null, $repository = null)
+    {
         $storage = new midgard_query_storage('com_meego_package');
 
         $qc = new midgard_query_constraint_group('AND');
@@ -523,7 +524,10 @@ abstract class Importer
         }
 
         $q = new midgard_query_select($storage);
-        $q->set_constraint($qc);
+        if (isset($qc))
+        {
+            $q->set_constraint($qc);
+        }
         $q->execute();
 
         $results = $q->list_objects();
