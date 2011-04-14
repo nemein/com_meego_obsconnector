@@ -2,6 +2,7 @@
 
 require __DIR__ . '/http.php';
 require __DIR__ . '/Importer.php';
+require __DIR__ . '/../parser/Dependency.php';
 require __DIR__ . '/../parser/DebianPackagesParser.php';
 
 /**
@@ -451,8 +452,6 @@ class DebianRepositoryFetcher extends Importer
                     $package->homepageurl = $details['Homepage'];
                 }
 
-                $details['License'] = '';
-
                 $package->version = $details['Version'];
                 $package->description = $details['Description'];
 
@@ -465,7 +464,7 @@ class DebianRepositoryFetcher extends Importer
                 // since this info is inside the package itself
                 $package->license = '';
 
-                // call the parent
+                // update or create the package
                 if ($package->guid)
                 {
                     echo '           update: ' . $package->filename . ' (name: ' . $package->name . ")\n";
@@ -477,14 +476,38 @@ class DebianRepositoryFetcher extends Importer
                     $package->create();
                 }
 
+                // @todo move this array from here and use in the Packages parsing too
                 // create relation arrays within details instead of strings
-                if (array_key_exists('depends', $details))
-                {
-                    $details['depends'] = $this->parseRelationLine($details['depends']);
-                }
+                $relation_types = array(
+                    'depends',
+                    'provides',
+                    'recommends',
+                    'conflicts',
+                    'breaks',
+                    'suggests',
+                    'enchances',
+                    'replaces',
+                    'preDepends',
+                    'buildDepends',
+                    'buildDependsIndep',
+                    'buildConflicts',
+                    'buildConflictsIndep'
+                );
 
+                // use the Dependency class for relations
+                // this is just a misleading name, otherwise it covers any kind of relations
+                $relations = array();
+
+                foreach ($relation_types as $type)
+                {
+                    if (array_key_exists($type, $details))
+                    {
+                        $relations[$type] = $this->parseRelationLine($details[$type]);
+                    }
+                    #echo '           found ' . count($relations[$type]) . ' ' . $type . " relations\n";
+                }
                 // add relations by calling the parent class
-                $this->addRelations($details, $package);
+                $this->addRelations((object)$relations, $package);
             }
         }
 
@@ -542,7 +565,7 @@ class DebianRepositoryFetcher extends Importer
                 $relation['constraint'] = trim($constraint);
                 $relation['version'] = trim($version);
 
-                $relations[] = $relation;
+                $relations[] = (object)$relation;
             }
         }
 
