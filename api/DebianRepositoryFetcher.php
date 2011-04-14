@@ -226,6 +226,7 @@ class DebianRepositoryFetcher extends Importer
 
                     // now cleanup all the packages from our database
                     // that are not part of this OBS repository
+
                     $this->cleanPackages($repo, $fulllist);
                 }
             }
@@ -407,6 +408,8 @@ class DebianRepositoryFetcher extends Importer
      */
     public function createPackage($project_name = null, $repo_id = null, $repo_name = null, $arch_name = null, $details = null)
     {
+        $package = null;
+
         if (   $project_name
             && $repo_id
             && $repo_name
@@ -484,6 +487,8 @@ class DebianRepositoryFetcher extends Importer
                 $this->addRelations($details, $package);
             }
         }
+
+        return($package);
     }
 
 
@@ -533,12 +538,14 @@ class DebianRepositoryFetcher extends Importer
                 }
 
                 $relation['name'] = trim($packagename);
+                $relation['title'] = trim($packagename);
                 $relation['constraint'] = trim($constraint);
                 $relation['version'] = trim($version);
 
                 $relations[] = $relation;
             }
         }
+
         return $relations;
     }
 }
