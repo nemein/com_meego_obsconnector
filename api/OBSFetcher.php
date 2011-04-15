@@ -31,7 +31,7 @@ class OBSFetcher extends Importer
         {
             $this->config = parse_ini_file(dirname(__FILE__) . '/config.ini');
 
-            if (isset($config['host']))
+            if (isset($this->config['host']))
             {
                 $this->api = new com_meego_obsconnector_API($this->config['login'], $this->config['password'], $this->config['host']);
             }
@@ -160,7 +160,8 @@ class OBSFetcher extends Importer
 
                 $repo->os = $project_meta['repositories'][$repo_name]['os'];
 
-                if (array_search($repo->os, $this->config['os_map']) === false)
+                if (   is_array($this->config['os_map'])
+                    && array_search($repo->os, $this->config['os_map']) === false)
                 {
                     echo "    skipped due to wrong OS: " . $repo->os . "\n";
                     continue;
