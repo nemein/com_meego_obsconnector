@@ -5,6 +5,8 @@
  */
 abstract class Importer
 {
+    private $config = null;
+
     /**
      * @todo: docs
      */
