@@ -29,15 +29,15 @@ class OBSFetcher extends Importer
         }
         else
         {
-            $config = parse_ini_file(dirname(__FILE__) . '/config.ini');
+            $this->config = parse_ini_file(dirname(__FILE__) . '/config.ini');
 
             if (isset($config['host']))
             {
-                $this->api = new com_meego_obsconnector_API($config['login'], $config['password'], $config['host']);
+                $this->api = new com_meego_obsconnector_API($this->config['login'], $this->config['password'], $this->config['host']);
             }
             else
             {
-                $this->api = new com_meego_obsconnector_API($config['login'], $config['password']);
+                $this->api = new com_meego_obsconnector_API($this->config['login'], $this->config['password']);
             }
         }
     }
@@ -158,6 +158,14 @@ class OBSFetcher extends Importer
             {
                 echo "\n -> " . $repo_name . "\n";
 
+                $repo->os = $project_meta['repositories'][$repo_name]['os'];
+
+                if (array_search($repo->os, $this->config['os_map']) === false)
+                {
+                    echo "    skipped due to wrong OS: " . $repo->os . "\n";
+                    continue;
+                }
+
                 try
                 {
                     $architectures = $this->api->getBuildArchitectures($project->name, $repo_name);
@@ -182,14 +190,15 @@ class OBSFetcher extends Importer
 
                     // fill in properties of the repo object
                     $repo->name = $repo_name;
-                    $repo->title = $repo_name . ' (for ' . $arch_name . ')';
-                    $repo->arch = $arch_name;
                     $repo->project = $project->id;
 
                     $repo->os = $project_meta['repositories'][$repo_name]['os'];
                     $repo->osversion = $project_meta['repositories'][$repo_name]['osversion'];
                     $repo->osgroup = $project_meta['repositories'][$repo_name]['osgroup'];
                     $repo->osux = $project_meta['repositories'][$repo_name]['osux'];
+
+                    $repo->title = $repo_name . ' (for ' . $arch_name . ')';
+                    $repo->arch = $arch_name;
 
                     if (! $cleanonly)
                     {
