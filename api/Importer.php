@@ -20,11 +20,11 @@ abstract class Importer
      * Goes through a project
      *
      * @param string OBS project name, e.g. home:feri
-     * @param boolean $cleanonly if true then only clenup will be performed on the local database
-     *                otherwise full import happens
+     * @param string optional; specify a concrete package to be imported
+     * @param boolean optional; if true then only cleanup will be performed on the local database
      *
      */
-    abstract public function go($project_name, $cleanonly = false);
+    abstract public function go($project_name = null, $specific_package_name = null, $cleanonly = false);
 
     /**
      * @todo: docs
