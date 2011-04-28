@@ -73,7 +73,7 @@ class OBSFetcher extends Importer
 
             echo "---------------------------------------------------------\n";
 
-            $this->go($project_name, $cleanonly);
+            $this->go($project_name, null, $cleanonly);
         }
     }
 
@@ -83,12 +83,19 @@ class OBSFetcher extends Importer
      * Goes through a project
      *
      * @param string OBS project name, e.g. home:feri
-     * @param boolean $cleanonly if true then only clenup will be performed on the local database
+     * @param string optional; specify a concrete package to be imported
+     * @param boolean optional; if true then only cleanup will be performed on the local database
      *                otherwise full import happens
      *
      */
-    public function go($project_name, $cleanonly = false)
+    public function go($project_name = null, $specific_package_name = null, $cleanonly = false)
     {
+        if (is_null($project_name))
+        {
+            // no project given for go
+            throw new RuntimeException('Please specify a valid project');
+        }
+
         // check if the project is already recorded in our database
         $project = $this->getProject($project_name);
 
@@ -234,6 +241,14 @@ class OBSFetcher extends Importer
 
                     foreach ($builtpackages as $package_name)
                     {
+                        // check if a specific package should be imported
+                        if (   ! is_null($specific_package_name)
+                            && $package_name != $specific_package_name)
+                        {
+                            // this is a no match, so go to next package
+                            continue;
+                        }
+
                         echo "\n     -> package #" . ++$this->package_counter . ': ' . $package_name . "\n";
 
                         try
