@@ -50,12 +50,13 @@ class DebianRepositoryFetcher extends Importer
     /**
      * Goes through a release specified by a URL that points to a Release file
      *
-     * @param string URL pointing to a Debian Release file
-     * @param boolean $cleanonly if true then only clenup will be performed on the local database
+     * @param string OBS project name, e.g. home:feri
+     * @param string optional; specify a concrete package to be imported
+     * @param boolean optional; if true then only cleanup will be performed on the local database
      *                otherwise full import happens
      *
      */
-    public function go($release_file_url, $cleanonly = false)
+    public function go($release_file_url = null, $specific_package_name = null, $cleanonly = false)
     {
         // get release information from the relase file
         switch ($this->protocol)
