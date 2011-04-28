@@ -6,6 +6,7 @@ require __DIR__ . '/../parser/Package.php';
 
 class com_meego_obsconnector_API
 {
+    private $config = null;
     private $host = null;
     private $http = null;
 
@@ -31,6 +32,8 @@ class com_meego_obsconnector_API
             $this->password = $password;
             $this->http->setAuthentication($login, $password);
         }
+
+        $this->config = parse_ini_file(dirname(__FILE__) . '/config.ini');
     }
 
     public function getPublishedProjects()
@@ -397,6 +400,22 @@ class com_meego_obsconnector_API
         $retval['name'] = strval($_xml['name']);
         $retval['title'] = strval($_xml->title);
         $retval['description'] = strval($_xml->description);
+
+        // check if the project is an official one
+        $official_project = false;
+
+        if (isset($this->config['official_project']))
+        {
+            foreach ($this->config['official_project'] as $pattern)
+            {
+                // echo "project name: " . $retval['name'] . ' vs ' . $pattern . "\n";
+                if (preg_match('/' . $pattern . '/', $retval['name']))
+                {
+                    $official_project = true;
+                }
+            }
+        }
+
         foreach ($_xml->person as $person)
         {
             if ($person['role'] == 'maintainer')
@@ -415,17 +434,25 @@ class com_meego_obsconnector_API
             $retval['repositories'][strval($repository['name'])]['osgroup'] = '';
             $retval['repositories'][strval($repository['name'])]['osux'] = '';
 
-            if (strval($repository->path['repository']) == 'standard')
+            if ($official_project)
             {
                 // parse the project property of path to determine OS, version, group and UX data
-                $info = explode(':', $repository->path['project']);
+                $info = explode('_', $repository['name']);
             }
             else
             {
-                // Might not work with all skinds of exotic repository names...
-                // parse the repository property of path to determine OS, version, group and UX data
-                // @todo: check back the whole tree of the anchestor repositories to determine uses..
-                $info = explode('_', $repository->path['repository']);
+                if (strval($repository->path['repository']) == 'standard')
+                {
+                    // parse the project property of path to determine OS, version, group and UX data
+                    $info = explode(':', $repository->path['project']);
+                }
+                else
+                {
+                    // Might not work with all skinds of exotic repository names...
+                    // parse the repository property of path to determine OS, version, group and UX data
+                    // @todo: check back the whole tree of the anchestor repositories to determine uses..
+                    $info = explode('_', $repository->path['repository']);
+                }
             }
 
             if (is_array($info))
@@ -455,6 +482,7 @@ class com_meego_obsconnector_API
                 $retval['repositories'][strval($repository['name'])]['architectures'][strval($arch)] = 1;
             }
         }
+
         return $retval;
     }
 
