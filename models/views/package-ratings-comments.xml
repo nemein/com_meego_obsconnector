@@ -7,28 +7,29 @@
             <condition left="com_meego_package:guid" right="com_meego_ratings_rating:to" />
         </join>
 
-<!--
-        depends on https://github.com/midgardproject/midgard-core/issues#issue/86
-
         <join type="left" class="com_meego_comments_comment_author">
             <condition left="com_meego_ratings_rating:comment" right="com_meego_comments_comment_author:commentid" />
         </join>
 
-        <property name="authorfirstname" use="com_meego_comments_comment_author:authorfirstname" />
-        <property name="authorlastname" use="com_meego_comments_comment_author:authorlastname" />
--->
+        <join type="left" class="midgard_person">
+            <condition left="com_meego_ratings_rating:metadata.creator" right="midgard_person:guid" />
+        </join>
 
         <property name="id" use="com_meego_package:id" />
         <property name="guid" use="com_meego_package:guid" />
         <property name="title" use="com_meego_package:title" />
         <property name="name" use="com_meego_package:name" />
+
+        <property name="authorfirstname" use="midgard_person:firstname" />
+        <property name="authorlastname" use="midgard_person:lastname" />
+
         <property name="rating" use="com_meego_ratings_rating:rating" />
         <property name="commentid" use="com_meego_ratings_rating:comment" />
-
+        <property name="comment" use="com_meego_comments_comment_author:content" />
+        <property name="posted" use="com_meego_ratings_rating:metadata.created" />
     </view>
 
     <view name="com_meego_package_ratings_comments" extends="com_meego_package_ratings" table="com_meego_ratings_rating">
-
         <join type="left" class="com_meego_comments_comment">
             <condition left="com_meego_ratings_rating:comment" right="com_meego_comments_comment:id" />
         </join>
