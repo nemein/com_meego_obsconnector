@@ -91,7 +91,7 @@
         <property name="id" type="unsigned integer" primaryfield="id" index="yes">
             <description>Local non-replication-safe database identifier</description>
         </property>
-        <property name="basecategory" type="unsigned integer" link="com_meego_package_basecategory:id">
+        <property name="basecategory" type="unsigned integer" link="com_meego_package_basecategory:id" parentfield="basecategory">
             <description>The id of the base category</description>
         </property>
         <property name="packagecategory" type="unsigned integer" link="com_meego_package_category:id">
