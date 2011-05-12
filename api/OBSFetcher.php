@@ -509,6 +509,8 @@ class OBSFetcher extends Importer
             // add relations by calling the parent class
             $this->addRelations($extinfo, $package);
         }
+
+        return $package;
     }
 
     /**
