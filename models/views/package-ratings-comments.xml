@@ -15,13 +15,15 @@
             <condition left="com_meego_ratings_rating:metadata.creator" right="midgard_person:guid" />
         </join>
 
+        <!-- Bug: the order matters. If authoruserguid comes after guid (see a bit below), then that guid will be the same as author guid -->
+        <property name="authorguid" use="midgard_person:guid" />
+        <property name="authorfirstname" use="midgard_person:firstname" />
+        <property name="authorlastname" use="midgard_person:lastname" />
+
         <property name="id" use="com_meego_package:id" />
         <property name="guid" use="com_meego_package:guid" />
         <property name="title" use="com_meego_package:title" />
         <property name="name" use="com_meego_package:name" />
-
-        <property name="authorfirstname" use="midgard_person:firstname" />
-        <property name="authorlastname" use="midgard_person:lastname" />
 
         <property name="rating" use="com_meego_ratings_rating:rating" />
         <property name="commentid" use="com_meego_ratings_rating:comment" />
