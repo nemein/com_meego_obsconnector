@@ -25,7 +25,7 @@ function help($cmd)
     echo "  o no new projects, repositories and packages will be scanned and imported\n";
     echo "  o current projects, repositories and packages in the database will be checked and removed if not existing in OBS anymore";
     echo "\n\n";
-    echo "$cmd -type debian -r release_file_url [-c | --cleanonly]\n\n";
+    echo "$cmd -t debian -r release_file_url [-c | --cleanonly]\n\n";
     echo "  Imports packages from a raw Debian repository by specifying a concrete release file.\n";
     echo "  Note: Debian release files are architecture specific.\n";
     echo "  If you want to import multiple architectures then run the importer for each of them release separately.\n";
