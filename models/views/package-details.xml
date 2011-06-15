@@ -8,6 +8,12 @@
         <join type="left" class="com_meego_package_category">
             <condition left="com_meego_package:category" right="com_meego_package_category:id" />
         </join>
+        <join type="left" class="com_meego_package_category_relation">
+            <condition left="com_meego_package:category" right="com_meego_package_category_relation:packagecategory" />
+        </join>
+        <join type="left" class="com_meego_package_basecategory">
+            <condition left="com_meego_package_category_relation:basecategory" right="com_meego_package_basecategory:id" />
+        </join>
         <join type="left" class="com_meego_project">
             <condition left="com_meego_repository:project" right="com_meego_project:id" />
         </join>
@@ -45,11 +51,29 @@
         <property name="packageinstallfileurl" use="com_meego_package:installfileurl">
             <description>Direct download URL for the ymp file to install all required repositories and fulfill dependencies</description>
         </property>
+        <property name="packagehomepageurl" use="com_meego_package:homepageurl">
+            <description>Homepage of the package</description>
+        </property>
         <property name="packagecategory" use="com_meego_package:category">
             <description>Id of the category the package belongs to</description>
         </property>
         <property name="packagecategoryname" use="com_meego_package_category:name">
             <description>Name of the category the package belongs to, example: Daemons</description>
+        </property>
+        <property name="packagecreated" use="com_meego_package:metadata.created">
+            <description>The date when the package was created</description>
+        </property>
+        <property name="packagerevised" use="com_meego_package:metadata.revised">
+            <description>The date when the package was last time updated</description>
+        </property>
+        <property name="packagescore" use="com_meego_package:metadata.score">
+            <description>Package score</description>
+        </property>
+        <property name="basecategory" use="com_meego_package_basecategory:id">
+            <description>Id of the category the package belongs to</description>
+        </property>
+        <property name="basecategoryname" use="com_meego_package_basecategory:name">
+            <description>Name of the base category the package belongs to, example: Games</description>
         </property>
         <property name="repoid" use="com_meego_repository:id">
             <description>Id of the repository the package belongs to</description>
