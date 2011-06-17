@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Schema xmlns="http://www.midgard-project.org/repligard/1.4">
+
+    <view name="com_meego_package_license" table="com_meego_package">
+        <property name="license" use="com_meego_package:license">
+            <description>License name of the package</description>
+        </property>
+        <constraint property="com_meego_package:license" operator=">" value="''" value_type="string" />
+    </view>
+
+</Schema>
