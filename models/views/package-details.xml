@@ -96,11 +96,17 @@
         <property name="repoos" use="com_meego_repository:os">
             <description>Name of the OS the repository is made for, example: meego</description>
         </property>
+        <property name="repoosversionid" use="com_meego_repository:osversion">
+            <description>ID of the OS the repository is built against</description>
+        </property>
         <property name="repoosversion" use="com_meego_os:version">
             <description>Version of the OS the repository is made for, example: 1.0</description>
         </property>
         <property name="repoosgroup" use="com_meego_repository:osgroup">
             <description>Name of the group the repository belongs to within the OS, example: core</description>
+        </property>
+        <property name="repoosuxid" use="com_meego_repository:osux">
+            <description>ID of the UX the repository is made for</description>
         </property>
         <property name="repoosux" use="com_meego_ux:name">
             <description>Name of the user experience the repository belongs to within the group, example: netbook</description>
