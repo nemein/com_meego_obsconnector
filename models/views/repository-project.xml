@@ -5,6 +5,12 @@
         <join type="left" class="com_meego_project">
             <condition left="com_meego_repository:project" right="com_meego_project:id" />
         </join>
+        <join type="left" class="com_meego_os">
+            <condition left="com_meego_repository:osversion" right="com_meego_os:id" />
+        </join>
+        <join type="left" class="com_meego_ux">
+            <condition left="com_meego_repository:osux" right="com_meego_ux:id" />
+        </join>
         <property name="repoid" use="com_meego_repository:id">
             <description>Id of the repository</description>
         </property>
@@ -20,13 +26,13 @@
         <property name="repoos" use="com_meego_repository:os">
             <description>Name of the OS the repository is made for, example: meego</description>
         </property>
-        <property name="repoosversion" use="com_meego_repository:osversion">
+        <property name="repoosversion" use="com_meego_os:version">
             <description>Version of the OS the repository is made for, example: 1.0</description>
         </property>
         <property name="repoosgroup" use="com_meego_repository:osgroup">
             <description>Name of the group the repository belongs to within the OS, example: core</description>
         </property>
-        <property name="repoosux" use="com_meego_repository:osux">
+        <property name="repoosux" use="com_meego_ux:name">
             <description>Name of the user experience the repository belongs to within the group, example: netbook</description>
         </property>
         <property name="repodisabledownload" use="com_meego_repository:disabledownload">
