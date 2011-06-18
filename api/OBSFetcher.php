@@ -201,9 +201,10 @@ class OBSFetcher extends Importer
                     $repo->project = $project->id;
 
                     $repo->os = $project_meta['repositories'][$repo_name]['os'];
-                    $repo->osversion = $project_meta['repositories'][$repo_name]['osversion'];
+
+                    $repo->osversion = $this->getOS($repo->os, $project_meta['repositories'][$repo_name]['osversion'], '');
                     $repo->osgroup = $project_meta['repositories'][$repo_name]['osgroup'];
-                    $repo->osux = $project_meta['repositories'][$repo_name]['osux'];
+                    $repo->osux = $this->getUX($project_meta['repositories'][$repo_name]['osux'], '');
 
                     $repo->title = $repo_name . ' (for ' . $arch_name . ')';
                     $repo->arch = $arch_name;
@@ -220,7 +221,7 @@ class OBSFetcher extends Importer
                             echo '     create: ';
                             $repo->create();
                         }
-                        echo $repo->name . ' (id: ' . $repo->id . '; ' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
+                        echo $repo->name . ' (id: ' . $repo->id . '; OS: ' . $repo->os . ', OS id: ' . $repo->osversion . ', ' . $repo->osgroup . ', UX id: ' . $repo->osux . ")\n";
                     }
 
                     $fulllist = array();
@@ -489,7 +490,7 @@ class OBSFetcher extends Importer
 
             if (is_object($rpmxray))
             {
-                $package->license = $rpmxray->license;
+                $package->license = $this->getLicense($rpmxray->license, '');
                 $package->homepageurl = $rpmxray->url;
                 $package->category = $this->getCategory($rpmxray->group);
             }
