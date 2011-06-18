@@ -18,10 +18,10 @@
             <description>Full name of a package, e.g. emacs-mercurial-1.7.1-3.4.armv7l.rpm</description>
         </property>
         <property name="repository" type="unsigned integer" link="com_meego_repository:id" parentfield="repository">
-            <description>id of the repository this package can be found</description>
+            <description>ID of the repository this package can be found</description>
         </property>
         <property name="version" type="string" index="yes">
-            <description>Package versio, e.g. 3.1</description>
+            <description>Package version, e.g. 3.1</description>
         </property>
         <property name="summary" type="text">
             <description>A short summary about the package</description>
@@ -30,10 +30,10 @@
             <description>A longer description of the package</description>
         </property>
         <property name="category" type="unsigned integer" link="com_meego_package_category:id">
-            <description>id of a package category</description>
+            <description>ID of a package category</description>
         </property>
-        <property name="license" type="string">
-            <description>Package license, e.g. GPLv2+</description>
+        <property name="license" type="unsigned integer" link="com_meego_license:id">
+            <description>Package license ID</description>
         </property>
         <property name="homepageurl" type="string">
             <description>Usually points to an upstream project's web site.</description>
@@ -53,7 +53,7 @@
         simple base categories that are configurable
         this table needs to be populated by hand; see category controller
     -->
-    <type name="com_meego_package_basecategory" table="com_meego_package_basecategory">
+    <type name="com_meego_package_basecategory" table="com_meego_package_basecategory" metadata="false">
         <property name="id" type="unsigned integer" primaryfield="id" index="yes">
             <description>Local non-replication-safe database identifier</description>
         </property>
@@ -69,7 +69,7 @@
         categories that are retrived directly from packages
         each category must be related to one or more base category
     -->
-    <type name="com_meego_package_category" table="com_meego_package_category">
+    <type name="com_meego_package_category" table="com_meego_package_category" metadata="false">
         <property name="id" type="unsigned integer" primaryfield="id" index="yes">
             <description>Local non-replication-safe database identifier</description>
         </property>
@@ -87,22 +87,22 @@
     <!--
          relations between package categories and base categories
     -->
-    <type name="com_meego_package_category_relation" table="com_meego_package_category_relation" parent="com_meego_package_basecategory">
+    <type name="com_meego_package_category_relation" table="com_meego_package_category_relation" parent="com_meego_package_basecategory" metadata="false">
         <property name="id" type="unsigned integer" primaryfield="id" index="yes">
             <description>Local non-replication-safe database identifier</description>
         </property>
         <property name="basecategory" type="unsigned integer" link="com_meego_package_basecategory:id" parentfield="basecategory">
-            <description>The id of the base category</description>
+            <description>The ID of the base category</description>
         </property>
         <property name="packagecategory" type="unsigned integer" link="com_meego_package_category:id">
-            <description>The id of the package category</description>
+            <description>The ID of the package category</description>
         </property>
     </type>
 
     <!--
         stores package relations, e.g. runtime dependencies
     -->
-    <type name="com_meego_package_relation" table="com_meego_package_relation" parent="com_meego_package">
+    <type name="com_meego_package_relation" table="com_meego_package_relation" parent="com_meego_package" metadata="false">
         <property name="id" type="unsigned integer" primaryfield="id" index="yes">
             <description>Local non-replication-safe database identifier</description>
         </property>
@@ -117,7 +117,7 @@
             <description>In case of OR dependencies, the name of the dependency group the relation belongs to</description>
         </property>
         <property name="to" type="unsigned integer" link="com_meego_package:id" field="topackage">
-            <description>Holds the id of a package if it is in the database</description>
+            <description>Holds the ID of a package if it is in the database</description>
         </property>
         <property name="toname" type="string">
             <description>Relation to package name, regardless if package is in database</description>
@@ -146,20 +146,20 @@
         <property name="arch" type="string">
             <description>Arch, example: armv7el</description>
         </property>
-        <property name="project" type="unsigned integer" link="com_meego_project:id"  parentfield="project">
-            <description>id of the project this repository belongs to</description>
+        <property name="project" type="unsigned integer" link="com_meego_project:id">
+            <description>ID of the project this repository belongs to</description>
         </property>
         <property name="os" type="string">
             <description>Name of the OS this repository is made for, example: meego</description>
         </property>
-        <property name="osversion" type="string">
-            <description>Version of the OS this repository is made for, example: 1.0</description>
+        <property name="osversion" type="unsigned integer" link="com_meego_os:id">
+            <description>ID of the OS this repository is made for</description>
         </property>
         <property name="osgroup" type="string">
             <description>Name of the group this repository belongs to within the OS, example: core</description>
         </property>
-        <property name="osux" type="string">
-            <description>Name of the user experience this repository belongs to within the group, example: netbook</description>
+        <property name="osux" type="unsigned integer" link="com_meego_ux:id">
+            <description>ID of the of the user experience this repository belongs to within the give osgroup (see above)</description>
         </property>
         <property name="disabledownload" type="bool">
             <description>Disable direct downloads for this repository</description>
@@ -194,8 +194,8 @@
         <property name="packagename" type="string" index="yes">
             <description>The package name</description>
         </property>
-        <property name="repository" type="unsigned integer" link="com_meego_repository:id"  parentfield="repository">
-            <description>id of the repository this package belongs to</description>
+        <property name="repository" type="unsigned integer" link="com_meego_repository:id" parentfield="repository">
+            <description>ID of the repository this package belongs to</description>
         </property>
         <property name="downloads" type="integer">
             <description>Number of downloads for this package in this repository</description>
@@ -210,6 +210,57 @@
             <description>Number of comments for this package in this repository</description>
         </property>
 
+    </type>
+
+    <!--
+        the package licenses
+    -->
+    <type name="com_meego_license" table="com_meego_license" metadata="false">
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="name" type="string" index="yes" unique="yes">
+            <description>A unique name for the license</description>
+        </property>
+        <property name="title" type="string">
+            <description>Pretty name for the license</description>
+        </property>
+        <property name="url" type="string">
+            <description>URL pointing to detailed info on the license</description>
+        </property>
+    </type>
+
+    <!--
+        the OSes
+    -->
+    <type name="com_meego_os" table="com_meego_os" metadata="false">
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="name" type="string" index="yes" unique="yes">
+            <description>Unique name of the OS, e.g. meego</description>
+        </property>
+        <property name="version" type="string">
+            <description>Version of the OS, e.g. 1.2</description>
+        </property>
+        <property name="url" type="string">
+            <description>URL pointing to an intro page of the OS</description>
+        </property>
+    </type>
+
+    <!--
+        the UXes (User Experiences)
+    -->
+    <type name="com_meego_ux" table="com_meego_ux" metadata="false">
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="name" type="string" index="yes" unique="yes">
+            <description>Unique name of the UX, e.g. netbook, ivi</description>
+        </property>
+        <property name="url" type="string">
+            <description>URL pointing to an intro page of the UX</description>
+        </property>
     </type>
 
     <!--
