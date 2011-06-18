@@ -545,6 +545,152 @@ abstract class Importer
         return $package;
     }
 
+    /**
+     * Checks if a license already exists in the database
+     * If the license exists then it returns its object
+     * Otherwise it returns a blank com_meego_license object
+     *
+     * @param string license name, e.g BSD
+     * @param string license title or pretty name, e.g BSD License
+     * @param string url to the license
+     *
+     * @return mixed com_meego_license object
+     */
+    public function getLicense($name, $title = '', $url = '')
+    {
+        $storage = new midgard_query_storage('com_meego_license');
+
+        $qc = new midgard_query_constraint(
+            new midgard_query_property('name'),
+            '=',
+            new midgard_query_value($name)
+        );
+
+        $q = new midgard_query_select($storage);
+        $q->set_constraint($qc);
+        $q->execute();
+
+        $results = $q->list_objects();
+
+        if (count($results))
+        {
+            $license = new com_meego_license($results[0]->guid);
+        }
+        else
+        {
+            $license = new com_meego_license();
+            $license->name = $name;
+            $license->title = $title;
+            $license->url = $url;
+
+            $license->create();
+        }
+
+        // @todo: could do a safety check if the new objext was really created
+        //        throw an exception if not
+        return $license->id;
+    }
+
+    /**
+     * Checks if an OS version already exists in the database
+     * If the OS version exists then it returns its object
+     * Otherwise it returns a blank com_meego_os object
+     *
+     * @param string OS name, e.g meego (all lowercase)
+     * @param string OS version, e.g 1.2
+     * @param string OS homepage URL
+     *
+     * @return mixed com_meego_os object
+     */
+    public function getOS($name, $version, $url = '')
+    {
+        $storage = new midgard_query_storage('com_meego_os');
+
+        $qc = new midgard_query_constraint_group('AND');
+
+        if (   strlen($name)
+            && strlen($version))
+        {
+            $qc->add_constraint(new midgard_query_constraint(
+                new midgard_query_property('name'),
+                '=',
+                new midgard_query_value($name)
+            ));
+            $qc->add_constraint(new midgard_query_constraint(
+                new midgard_query_property('version'),
+                '=',
+                new midgard_query_value($version)
+            ));
+        }
+
+        $q = new midgard_query_select($storage);
+        $q->set_constraint($qc);
+        $q->execute();
+
+        $results = $q->list_objects();
+
+        if (count($results))
+        {
+            $os = new com_meego_os($results[0]->guid);
+        }
+        else
+        {
+            $os = new com_meego_os();
+            $os->name = strtolower($name);
+            $os->version = $version;
+            $os->url = $url;
+
+            $os->create();
+        }
+
+        // @todo: could do a safety check if the new objext was really created
+        //        throw an exception if not
+        return $os->id;
+    }
+
+    /**
+     * Checks if a UX already exists in the database
+     * If the UX exists then it returns its object
+     * Otherwise it returns a blank com_meego_ux object
+     *
+     * @param string UX name, e.g netbook, ivi (all lowercase)
+     * @param string UX homepage URL
+     *
+     * @return mixed com_meego_ux object
+     */
+    public function getUX($name, $url = '')
+    {
+        $storage = new midgard_query_storage('com_meego_ux');
+
+        $qc = new midgard_query_constraint(
+            new midgard_query_property('name'),
+            '=',
+            new midgard_query_value($name)
+        );
+
+        $q = new midgard_query_select($storage);
+        $q->set_constraint($qc);
+        $q->execute();
+
+        $results = $q->list_objects();
+
+        if (count($results))
+        {
+            $ux = new com_meego_ux($results[0]->guid);
+        }
+        else
+        {
+            $ux = new com_meego_ux();
+            $ux->name = $name;
+            $ux->url = $url;
+
+            $ux->create();
+        }
+
+        // @todo: could do a safety check if the new objext was really created
+        //        throw an exception if not
+        return $ux->id;
+    }
 
     /**
      * Deletes all relations a package is involved in
