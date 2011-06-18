@@ -448,7 +448,7 @@ class com_meego_obsconnector_API
                 }
                 else
                 {
-                    // Might not work with all skinds of exotic repository names...
+                    // Might not work with all kinds of exotic repository names...
                     // parse the repository property of path to determine OS, version, group and UX data
                     // @todo: check back the whole tree of the anchestor repositories to determine uses..
                     $info = explode('_', $repository->path['repository']);
@@ -468,6 +468,13 @@ class com_meego_obsconnector_API
                 if (isset($info[2]))
                 {
                     $retval['repositories'][strval($repository['name'])]['osgroup'] = mb_strtolower($info[2], 'UTF-8');
+                }
+                else
+                {
+                    if (strval($repository->path['repository']) == 'standard')
+                    {
+                        $retval['repositories'][strval($repository['name'])]['osgroup'] = 'standard';
+                    }
                 }
                 if (isset($info[3]))
                 {
