@@ -598,11 +598,12 @@ abstract class Importer
      *
      * @param string OS name, e.g meego (all lowercase)
      * @param string OS version, e.g 1.2
+     * @param string OS architecture, e.g armv7el
      * @param string OS homepage URL
      *
      * @return mixed com_meego_os object
      */
-    public function getOS($name, $version, $url = '')
+    public function getOS($name, $version, $arch, $url = '')
     {
         $storage = new midgard_query_storage('com_meego_os');
 
@@ -621,6 +622,11 @@ abstract class Importer
                 '=',
                 new midgard_query_value($version)
             ));
+            $qc->add_constraint(new midgard_query_constraint(
+                new midgard_query_property('arch'),
+                '=',
+                new midgard_query_value($arch)
+            ));
         }
 
         $q = new midgard_query_select($storage);
@@ -638,6 +644,7 @@ abstract class Importer
             $os = new com_meego_os();
             $os->name = strtolower($name);
             $os->version = $version;
+            $os->arch = $arch;
             $os->url = $url;
 
             $os->create();

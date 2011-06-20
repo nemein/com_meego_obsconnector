@@ -200,14 +200,16 @@ class OBSFetcher extends Importer
                     $repo->name = $repo_name;
                     $repo->project = $project->id;
 
+                    $repo->arch = $arch_name;
+                    $repo->title = $repo_name . ' (for ' . $arch_name . ')';
+
                     $repo->os = $project_meta['repositories'][$repo_name]['os'];
 
-                    $repo->osversion = $this->getOS($repo->os, $project_meta['repositories'][$repo_name]['osversion'], '');
+                    // @todo: we could supply an URL for the OS if available (see last parameter)
+                    $repo->osversion = $this->getOS($repo->os, $project_meta['repositories'][$repo_name]['osversion'], $repo->arch, '');
+
                     $repo->osgroup = $project_meta['repositories'][$repo_name]['osgroup'];
                     $repo->osux = $this->getUX($project_meta['repositories'][$repo_name]['osux'], '');
-
-                    $repo->title = $repo_name . ' (for ' . $arch_name . ')';
-                    $repo->arch = $arch_name;
 
                     if (! $cleanonly)
                     {
@@ -221,7 +223,7 @@ class OBSFetcher extends Importer
                             echo '     create: ';
                             $repo->create();
                         }
-                        echo $repo->name . ' (id: ' . $repo->id . '; OS: ' . $repo->os . ', OS id: ' . $repo->osversion . ', ' . $repo->osgroup . ', UX id: ' . $repo->osux . ")\n";
+                        echo $repo->name . ' (id: ' . $repo->id . '; OS: ' . $repo->os . ', OS id: ' . $repo->osversion . ', ' . $repo->osgroup . ', UX id: ' . $repo->osux . ', OS arch: ' . $repo->arch . ")\n";
                     }
 
                     $fulllist = array();
