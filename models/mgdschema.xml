@@ -231,7 +231,7 @@
     </type>
 
     <!--
-        the OSes
+        the OSes; used by the OCS interface
     -->
     <type name="com_meego_os" table="com_meego_os" metadata="false">
         <property name="id" type="unsigned integer" primaryfield="id" index="yes">
@@ -243,13 +243,16 @@
         <property name="version" type="string">
             <description>Version of the OS, e.g. 1.2</description>
         </property>
+        <property name="arch" type="string">
+            <description>Arch, example: armv7el</description>
+        </property>
         <property name="url" type="string">
             <description>URL pointing to an intro page of the OS</description>
         </property>
     </type>
 
     <!--
-        the UXes (User Experiences)
+        the UXes (User Experiences); used by the OCS interface
     -->
     <type name="com_meego_ux" table="com_meego_ux" metadata="false">
         <property name="id" type="unsigned integer" primaryfield="id" index="yes">
