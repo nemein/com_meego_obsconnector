@@ -21,6 +21,9 @@
             <condition left="com_meego_package:repository" right="com_meego_package_statistics_calculated:repository" />
             <condition left="com_meego_package:name" right="com_meego_package_statistics_calculated:packagename" />
         </join>
+        <join type="left" class="com_meego_license">
+            <condition left="com_meego_package:license" right="com_meego_license:id" />
+        </join>
         <join type="left" class="com_meego_os">
             <condition left="com_meego_repository:osversion" right="com_meego_os:id" />
         </join>
@@ -28,7 +31,7 @@
             <condition left="com_meego_repository:osux" right="com_meego_ux:id" />
         </join>
         <property name="packageid" use="com_meego_package:id">
-            <description>Id of the package</description>
+            <description>ID of the package</description>
         </property>
         <property name="packageguid" use="com_meego_package:guid">
             <description>GUID of the package</description>
@@ -50,6 +53,12 @@
         </property>
         <property name="packagedescription" use="com_meego_package:description">
             <description>Long description of the package</description>
+        </property>
+        <property name="packagelicense" use="com_meego_license:name">
+            <description>Package license name</description>
+        </property>
+        <property name="packagelicenseid" use="com_meego_package:license">
+            <description>Package license ID</description>
         </property>
         <property name="packagedownloadurl" use="com_meego_package:downloadurl">
             <description>Direct download URL for the package</description>
