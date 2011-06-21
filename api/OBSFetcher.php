@@ -452,16 +452,6 @@ class OBSFetcher extends Importer
             $_uri = str_replace(':', ':/', $project_name) . '/' . str_replace(':', ':/', $repo_name) . '/' . $repo_arch_name . '/' . $file_name;
             $package->downloadurl = $this->download_repo_protocol . '://' . $this->download_repo_host . '/' . $_uri;
 
-            try
-            {
-                // get the install file URL
-                $package->installfileurl = $this->api->getInstallFileURL($project_name, $repo_name, $arch_name, $package_name, $file_name);
-            }
-            catch (RuntimeException $e)
-            {
-                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
-            }
-
             // @todo
             $package->bugtracker = '* TODO *';
 
@@ -507,6 +497,61 @@ class OBSFetcher extends Importer
             {
                 echo '           create: ' . $package->filename . ' (name: ' . $package->name . ")\n";
                 $package->create();
+            }
+
+            try
+            {
+                // if attachment creation failed then use the original OBS link
+                $package->installfileurl = $this->api->getInstallFileURL($project_name, $repo_name, $arch_name, $package_name, $file_name);
+
+                // get the install file URL
+                $installfileurl = $this->api->getRelativeInstallPath($project_name, $repo_name, $arch_name, $package_name, $file_name);
+
+                // get the file and store it locally
+                $fp = $this->api->http->get_as_stream($installfileurl);
+
+                if ($fp)
+                {
+                    $attachment = $package->create_attachment("install.ymp", "install.ymp", "application/xml");
+
+                    if ($attachment)
+                    {
+                        $blob = new midgard_blob($attachment);
+
+                        $handler = $blob->get_handler('wb');
+
+                        fwrite($handler, stream_get_contents($fp));
+                        fclose($fp);
+
+                        fclose($handler);
+                        $attachment->update();
+
+                        // set the install url field to the local attachment
+                        $package->installfileurl = "install.ymp";
+                    }
+                    else
+                    {
+                        // could not create attachment, maybe we have it already
+                        $attachments = $package->list_attachments();
+
+                        foreach ($attachments as $attachment)
+                        {
+                            if ($attachment->name == "install.ymp")
+                            {
+                                // ok, got it
+                                $package->installfileurl = $attachment->name;
+                                break;
+                            }
+                        }
+                    }
+
+                    // update because of the installfileurl stuff
+                    $package->update();
+                }
+            }
+            catch (RuntimeException $e)
+            {
+                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
             }
 
             // add relations by calling the parent class
