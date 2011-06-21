@@ -8,7 +8,7 @@ class com_meego_obsconnector_API
 {
     private $config = null;
     private $host = null;
-    private $http = null;
+    public $http = null;
 
     public function __construct($login = null, $password = null, $host = 'api.pub.meego.com')
     {
@@ -68,7 +68,8 @@ class com_meego_obsconnector_API
 
     public function putPackageSourceFile($project, $package, $filename, $stream_or_string)
     {
-        if (is_resource($stream_or_string)) {
+        if (is_resource($stream_or_string))
+        {
             $stream_or_string = stream_get_contents($stream_get_contents);
             fclose($stream_or_string);
         }
@@ -550,6 +551,23 @@ class com_meego_obsconnector_API
     }
 
     /**
+     * Returns a relative link to the install file
+     * that lists repositories of packages that are runtime dependencies
+     * of the package in question
+     *
+     * @param string project person's home project, e.g. home:ferenc
+     * @param string repository name of the repo, e.g. meego_1.1_extras_handset
+     * @param string architecture e.g. i586 or armv7l
+     * @param string full package name, e.g. gtk-xfce-engine-2.6.0-1.1.rpm (see getPublished)
+     *
+     * @return string URL of the install file
+     */
+    public function getRelativeInstallPath($project = null, $repository = null, $architecture = null, $fullpackagename = null)
+    {
+        return '/published' . '/' . $project . '/' . $repository . '/' . $architecture . '/' . $fullpackagename . '?view=ymp';
+    }
+
+    /**
      * Returns a link to the install file
      * that lists repositories of packages that are runtime dependencies
      * of the package in question
@@ -563,7 +581,24 @@ class com_meego_obsconnector_API
      */
     public function getInstallFileURL($project = null, $repository = null, $architecture = null, $fullpackagename = null)
     {
-        return 'https://' . $this->host . '/published' . '/' . $project . '/' . $repository . '/' . $architecture . '/' . $fullpackagename . '?view=ymp';
+        return 'https://' . $this->host . $this->getRelativeInstallPath($project, $repository, $architecture, $fullpackagename);
+    }
+
+    /**
+     * Returns a link to the install file with authentication details
+     * that lists repositories of packages that are runtime dependencies
+     * of the package in question
+     *
+     * @param string project person's home project, e.g. home:ferenc
+     * @param string repository name of the repo, e.g. meego_1.1_extras_handset
+     * @param string architecture e.g. i586 or armv7l
+     * @param string full package name, e.g. gtk-xfce-engine-2.6.0-1.1.rpm (see getPublished)
+     *
+     * @return string URL of the install file
+     */
+    public function getAuthInstallFileURL($project = null, $repository = null, $architecture = null, $fullpackagename = null)
+    {
+        return 'https://' . $this->http->getAuthentication() . $this->host . '/published' . '/' . $project . '/' . $repository . '/' . $architecture . '/' . $fullpackagename . '?view=ymp';
     }
 
     /**
