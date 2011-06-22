@@ -731,12 +731,14 @@ abstract class Importer
 
         if (count($results))
         {
+            $_mc = midgard_connection::get_instance();
+
             foreach ($results as $object)
             {
                 $relation = new com_meego_package_relation($object->guid);
 
                 if (   is_object($relation)
-                    && $relation->delete())
+                    && $relation->purge())
                 {
                     echo '              deleted relation: ';
                 }
@@ -744,9 +746,14 @@ abstract class Importer
                 {
                     echo '              failed to delete relation: ';
                     $retval = false;
-                    break;
                 }
                 echo  $relation->id . ' (from: ' . $relation->from . ', to: ' . $relation->to .")\n";
+
+                if (! $retval)
+                {
+                    echo $_mc->get_error_string() . "\n";
+                    break;
+                }
             }
         }
 
@@ -774,11 +781,21 @@ abstract class Importer
 
             if ($retval)
             {
-                $retval = $package->delete();
+                if ($package->has_attachments())
+                {
+                    // we have to remove all attachments before Midgard is willing
+                    // to delete the package
+                    $retval = $package->delete_attachments();
+                }
 
                 if ($retval)
                 {
-                    echo '              deleted: ';
+                    $retval = $package->delete(true);
+
+                    if ($retval)
+                    {
+                        echo '              deleted: ';
+                    }
                 }
             }
         }
@@ -789,6 +806,11 @@ abstract class Importer
         }
         echo  $package->filename . ' (' . $package->guid .")\n";
 
+        if (! $retval)
+        {
+            $_mc = midgard_connection::get_instance();
+            echo $_mc->get_error_string() . "\n";
+        }
         return $retval;
     }
 
