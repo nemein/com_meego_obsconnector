@@ -9,6 +9,8 @@ require __DIR__.'/../parser/RpmXray.php';
  */
 class OBSFetcher extends Importer
 {
+    private $mvc = null;
+
     private $project_name = null;
     private $package_counter = 0;
     private $build_counter = 0;
@@ -504,11 +506,8 @@ class OBSFetcher extends Importer
                 // if attachment creation failed then use the original OBS link
                 $package->installfileurl = $this->api->getInstallFileURL($project_name, $repo_name, $arch_name, $package_name, $file_name);
 
-                // get the install file URL
-                $installfileurl = $this->api->getRelativeInstallPath($project_name, $repo_name, $arch_name, $package_name, $file_name);
-
                 // get the file and store it locally
-                $fp = $this->api->http->get_as_stream($installfileurl);
+                $fp = $this->api->http->get_as_stream($this->api->getRelativeInstallPath($project_name, $repo_name, $arch_name, $package_name, $file_name));
 
                 if ($fp)
                 {
@@ -525,9 +524,6 @@ class OBSFetcher extends Importer
 
                         fclose($handler);
                         $attachment->update();
-
-                        // set the install url field to the local attachment
-                        $package->installfileurl = "install.ymp";
                     }
                     else
                     {
@@ -538,11 +534,16 @@ class OBSFetcher extends Importer
                         {
                             if ($attachment->name == "install.ymp")
                             {
-                                // ok, got it
-                                $package->installfileurl = $attachment->name;
                                 break;
                             }
                         }
+                    }
+
+                    // set the install url field to the local attachment
+                    if (is_object($attachment))
+                    {
+                        // write a local relative URL for the install file
+                        $package->installfileurl = '/mgd:attachment/' . $attachment->guid . '/' . $attachment->name;
                     }
 
                     // update because of the installfileurl stuff
