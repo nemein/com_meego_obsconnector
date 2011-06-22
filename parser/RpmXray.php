@@ -87,7 +87,7 @@ class RpmXray {
             throw new RuntimeException("Please install the 'rpm' tool which supports the --querytags command line argument.");
         }
 
-        $available = array_flip(split("\n", $querytags));
+        $available = array_flip(explode("\n", $querytags));
 
         // get the info needed that is __not available__ through OBS API
         // this works with single line infos, so requesting 'provides' will only
