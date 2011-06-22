@@ -95,6 +95,8 @@ class com_meego_obsconnector_HTTP
 
     protected function setProxy()
     {
+        $proxy_var_name = null;
+
         if ($this->protocol == 'http') {
             $proxy_var_name = 'http_proxy';
         } elseif ($this->protocol == 'https') {
