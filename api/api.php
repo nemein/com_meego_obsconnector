@@ -8,6 +8,8 @@ class com_meego_obsconnector_API
 {
     private $config = null;
     private $host = null;
+    private $download_repo_prefix = '';
+
     public $http = null;
 
     public function __construct($login = null, $password = null, $host = 'api.pub.meego.com')
