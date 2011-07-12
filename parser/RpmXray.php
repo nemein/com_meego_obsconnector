@@ -14,7 +14,8 @@
 require_once("Dependency.php");
 require_once("../api/http.php");
 
-class RpmXray {
+class RpmXray
+{
 
     /**
      * Package sepcific attributes
@@ -53,7 +54,7 @@ class RpmXray {
     /**
      * Constructor
      */
-    function __construct($protocol = 'http', $host = null, $uri = null, $debug = false)
+    public function __construct($protocol = 'http', $host = null, $uri = null, $debug = false)
     {
         if ( ! $host )
         {
@@ -70,6 +71,7 @@ class RpmXray {
         $this->_flag_debug = $debug;
 
         $this->xray();
+        $this->extract_icon();
     }
 
     /**
@@ -77,7 +79,7 @@ class RpmXray {
      * X-rays the file
      *
      */
-    function xray()
+    public function xray()
     {
         // check if rpm tool is available
         $querytags = shell_exec('rpm --querytags 2>/dev/null');
@@ -94,7 +96,8 @@ class RpmXray {
         // return the 1st provided file's name
         //
         // @see https://api.pub.meego.com/apidocs/#64
-        $infoneeded = array (
+        $infoneeded = array
+        (
             'license',
             'url',
             'group',
@@ -120,7 +123,8 @@ class RpmXray {
             }
         }
 
-        if ($this->_flag_debug) {
+        if ($this->_flag_debug)
+        {
             foreach($infoneeded as $key)
             {
                 echo "\n" . ucfirst($key) . "\n";
@@ -131,6 +135,19 @@ class RpmXray {
         }
 
         unset($querytags, $available, $infoneeded);
+    }
+
+    /**
+     *
+     * Looks up an icon from the package and extracts it to:
+     * /var/tmp/{packagename}.icon
+     *
+     * It can then be further processed (e.g. import it to a midgard_attachment)
+     *
+     */
+    public function extract_icon()
+    {
+        $this->icon = "local path to the icon";
     }
 }
 
