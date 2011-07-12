@@ -25,7 +25,7 @@ class DebianControlParser {
      * RPM spec      : N/A
      * Debian control: Brakes:
      */
-    var $breakes = array();
+    var $brakes = array();
 
     /**
      * Constructor
