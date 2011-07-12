@@ -515,44 +515,6 @@ class com_meego_obsconnector_API
     }
 
     /**
-     * Downloads a binary file directly from the repository
-     *
-     * @param string project person's home project, e.g. home:ferenc
-     * @param string repository name of the repo, e.g. meego_1.1_extras_handset
-     * @param string architecture e.g. i586 or armv7l
-     * @param string package name of the package, e.g. gtk-xfce-engine-2.6.0-1.1.rpm (see getPublished)
-     * @param string version of the package, e.g. 2.6.0
-     *
-     * @return string local path of the binary file
-     */
-    public function downloadBinary($project = null, $repository = null, $architecture = null, $fullpackagename = null)
-    {
-        $path = '/tmp/' . $fullpackagename;
-        $handle = $this->http->get_as_stream($path);
-
-        if ($handle === false)
-        {
-            throw new RuntimeException('Unable to open file for writing: ' . $path);
-            return null;
-        }
-        else
-        {
-            //download the binary file
-            $txt = $this->http->get('/published' . '/' . $project . '/' . $repository . '/' . $architecture . '/' . $fullpackagename);
-            if ($txt)
-            {
-                $retval = @fwrite($handle, $txt);
-                if ($retval === false)
-                {
-                    throw new RuntimeException('Unable to save to: ' . $path);
-                }
-            }
-            fclose($handle);
-            return $path;
-        }
-    }
-
-    /**
      * Returns a relative link to the install file
      * that lists repositories of packages that are runtime dependencies
      * of the package in question
