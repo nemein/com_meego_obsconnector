@@ -2,6 +2,7 @@
 require __DIR__.'/api.php';
 require __DIR__ . '/Importer.php';
 require __DIR__.'/../parser/RpmXray.php';
+require __DIR__.'/../parser/DebXray.php';
 //require __DIR__.'/../parser/RpmSpecParser.php';
 
 /**
@@ -290,6 +291,12 @@ class OBSFetcher extends Importer
                             {
                                 $bin_arch = $chunks[count($chunks) - 2];
 
+                                // workaround for Harmattan repositories
+                                if ($chunks[count($chunks) - 1] == 'deb')
+                                {
+                                    $bin_arch = 'armv7el';
+                                }
+
                                 if ($bin_arch == 'armv7l')
                                 {
                                     // fix the inconsistency between the published repo and the API
@@ -319,14 +326,23 @@ class OBSFetcher extends Importer
 
                             try
                             {
-                                $screenshot_names = array_filter
+                                $image_names = array_filter
                                 (
                                     $this->api->getPackageSourceFiles($project->name, $package_name),
 
                                     function($name)
                                     {
-                                        $_marker = 'screenshot.png';
-                                        return strpos($name, $_marker) === (strlen($name) - strlen($_marker));
+                                        $retval = false;
+                                        $_icon_marker = 'icon.png';
+                                        $_screenshot_marker = 'screenshot.png';
+
+                                        if (   strpos($name, $_icon_marker) === (strlen($name) - strlen($_icon_marker))
+                                            || strpos($name, $_screenshot_marker) === (strlen($name) - strlen($_screenshot_marker)))
+                                        {
+                                            $retval = true;
+                                        }
+
+                                        return $retval;
                                     }
                                 );
                             }
@@ -335,7 +351,7 @@ class OBSFetcher extends Importer
                                 echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
                             }
 
-                            foreach ($screenshot_names as $name)
+                            foreach ($image_names as $name)
                             {
                                 try
                                 {
@@ -363,20 +379,6 @@ class OBSFetcher extends Importer
                                         $attachment->update();
                                     }
                                 }
-                            }
-
-                            //
-                            // @todo: get the icon from the package if exists there
-                            //
-                            try
-                            {
-                                // check the filelist of the package that can be obtained via an OBS API call
-                                // download the package locally if it has a promising icon in it
-                                // $rpm = $this->getRpm($project->name, $repo_name, $arch_name, $package_name);
-                            }
-                            catch (RuntimeException $e)
-                            {
-                                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
                             }
                         }
                     }
@@ -431,6 +433,9 @@ class OBSFetcher extends Importer
                 $package->filename = $extinfo->filename;
             }
 
+            // deb or rpm
+            $package->type = substr($package->filename, strrpos($package->filename, '.') + 1);
+
             $package->name = $extinfo->name;
             $package->title = $extinfo->title;
             $package->version = $extinfo->version;
@@ -448,6 +453,11 @@ class OBSFetcher extends Importer
             {
                 // fix the inconsistency between the published repo and the API
                 $repo_arch_name = 'armv7l';
+
+                if ($package->type == 'deb')
+                {
+                    $repo_arch_name = $extinfo->arch;
+                }
             }
 
             // direct download url
@@ -460,7 +470,17 @@ class OBSFetcher extends Importer
             // for some info we need a special xray
             try
             {
-                $rpmxray = new RpmXray($this->download_repo_protocol, $this->download_repo_host, $_uri);
+                switch($package->type)
+                {
+                    case 'rpm':
+                        $xray = new RpmXray($this->download_repo_protocol, $this->download_repo_host, $_uri);
+                        break;
+                    case 'deb':
+                        $xray = new DebXray($this->download_repo_protocol, $this->download_repo_host, $_uri);
+                        break;
+                    default:
+                        throw new RuntimeException("Unknown file extension: " . $package->type . "(should be rpm or deb).");
+                }
             }
             catch (RuntimeException $e)
             {
@@ -482,11 +502,11 @@ class OBSFetcher extends Importer
                 }
             }
 
-            if (is_object($rpmxray))
+            if (is_object($xray))
             {
-                $package->license = $this->getLicense($rpmxray->license, '');
-                $package->homepageurl = $rpmxray->url;
-                $package->category = $this->getCategory($rpmxray->group);
+                $package->license = $this->getLicense($xray->license, '');
+                $package->homepageurl = $xray->url;
+                $package->category = $this->getCategory($xray->group);
             }
 
             // call the parent
@@ -560,73 +580,5 @@ class OBSFetcher extends Importer
         }
 
         return $package;
-    }
-
-    /**
-     * @todo: docs
-     */
-    public function getRpm($project_name, $repo_name, $arch_name, $package_name)
-    {
-        static $cache = null;
-
-        if (null === $cache)
-        {
-            $cache = array();
-        }
-
-        if ( ! array_key_exists($project_name . '_' . $package_name, $cache) )
-        {
-            try
-            {
-                $rpm = $this->api->downloadBinary($project_name, $repo_name, $arch_name, $package_name);
-            }
-            catch (RuntimeException $e)
-            {
-                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
-            }
-
-            if ($rpm === false)
-            {
-                throw new RuntimeException("couldn't get rpm file");
-            }
-
-            $cache[$project_name . '_' . $package_name] = new RpmXray($rpm, true);
-        }
-
-        return $cache[$project_name . '_' . $package_name];
-    }
-
-    /**
-     * @todo: docs
-     */
-    public function getSpec($project_name, $package_name)
-    {
-        static $cache = null;
-
-        if (null === $cache)
-        {
-            $cache = array();
-        }
-
-        if ( ! array_key_exists($project_name . '_' . $package_name, $cache) )
-        {
-            try
-            {
-                $spec_stream = $this->api->getPackageSpec($project_name, $package_name);
-            }
-            catch (RuntimeException $e)
-            {
-                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
-            }
-
-            if (false === $spec_stream)
-            {
-                throw new RuntimeException("couldn't get spec-file");
-            }
-
-            $cache[$project_name . '_' . $package_name] = new RpmSpecParser($spec_stream, '');
-        }
-
-        return $cache[$project_name . '_' . $package_name];
     }
 }
