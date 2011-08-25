@@ -6,15 +6,18 @@ class com_meego_obsconnector_HTTP
     private $protocol = 'http';
 
     private $auth = '';
+    private $wget = false;
 
     protected $more_options = array();
 
-    public function __construct($prefix = '', $protocol = 'http')
+    public function __construct($prefix = '', $protocol = 'http', $wget = false)
     {
         $this->prefix = $prefix;
         $this->protocol = $protocol;
 
         $this->setProxy();
+
+        $this->wget = $wget;
     }
 
     public function setAuthentication($user, $password)
@@ -37,20 +40,35 @@ class com_meego_obsconnector_HTTP
      *
      * @return string the contents of the file
      */
-    public function get($url_to_fetch, $apiurl = true)
+    public function get($url_to_fetch, $apiurl = true, $wget = false)
     {
-        $context = stream_context_create(array(
-            'http' => array_merge($this->more_options, array('method' => 'GET', 'timeout' => 30)),
-        ));
+        $retval = 0;
 
         if ($apiurl)
         {
             $url_to_fetch = $this->buildUrl($url_to_fetch);
         }
 
-        $content = @file_get_contents($url_to_fetch, false, $context);
+        if (! $this->wget)
+        {
+            $context = stream_context_create(array(
+                'http' => array_merge($this->more_options, array(
+                    'method' => 'GET',
+                    'timeout' => 10
+                )),
+            ));
+            $content = file_get_contents($url_to_fetch, false, $context);
+        }
+        else
+        {
+            exec('wget -qO- ' . $url_to_fetch, $_content, $retval);
+            $content = implode("\n", $_content);
+            unset($_content);
+        }
 
-        if ($content === false)
+
+        if (   $content === false
+            || $retval != 0)
         {
             // failed to fetch content
             throw new RuntimeException("Failed to fetch " . $url_to_fetch, 990);
@@ -100,13 +118,13 @@ class com_meego_obsconnector_HTTP
 
     protected function buildUrl($url)
     {
-        return $this->protocol.'://'.$this->auth.$this->prefix.$url;
+        return $this->protocol . '://' . $this->auth . $this->prefix . $url;
     }
 
 
     protected function setProxy()
     {
-        $proxy_var_name = null;
+        $proxy_var_name = '';
 
         if ($this->protocol == 'http') {
             $proxy_var_name = 'http_proxy';
@@ -118,24 +136,29 @@ class com_meego_obsconnector_HTTP
             }
         }
 
-        if (null === $proxy_var_name) {
+        if ($proxy_var_name === '')
+        {
             return;
         }
 
-        if (!isset($_SERVER[$proxy_var_name])) {
+        if (! isset($_SERVER[$proxy_var_name]))
+        {
             return;
         }
 
         $parsed_proxy_str = parse_url($_SERVER[$proxy_var_name]);
 
-        if (is_array($parsed_proxy_str) and
-            $parsed_proxy_str['scheme'] == 'http' and
-            isset($parsed_proxy_str['host']) and
-            isset($parsed_proxy_str['port'])
-        ) {
+        if (  is_array($parsed_proxy_str)
+            && $parsed_proxy_str['scheme'] == 'http'
+            && isset($parsed_proxy_str['host'])
+            && isset($parsed_proxy_str['port'])
+        )
+        {
             $this->more_options['proxy'] = 'tcp://'.$parsed_proxy_str['host'].':'.$parsed_proxy_str['port'];
             $this->more_options['request_fulluri'] = true;
-        } else {
+        }
+        else
+        {
             trigger_error('"'.$proxy_var_name.'" environment variable is set to the wrong value. expecting http://host:port', E_USER_WARNING);
         }
     }
