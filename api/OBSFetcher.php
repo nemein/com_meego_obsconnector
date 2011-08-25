@@ -519,6 +519,7 @@ class OBSFetcher extends Importer
                 $package->installfileurl = $this->api->getInstallFileURL($project_name, $repo_name, $arch_name, $package_name, $file_name);
 
                 // get the file and store it locally
+                // $fp might be a stream, or string if wget is in use
                 $fp = $this->api->http->get_as_stream($this->api->getRelativeInstallPath($project_name, $repo_name, $arch_name, $package_name, $file_name));
 
                 if ($fp)
@@ -531,10 +532,18 @@ class OBSFetcher extends Importer
 
                         $handler = $blob->get_handler('wb');
 
-                        fwrite($handler, stream_get_contents($fp));
-                        fclose($fp);
+                        if (! $this->config['wget'])
+                        {
+                            fwrite($handler, stream_get_contents($fp));
+                            fclose($fp);
+                        }
+                        else
+                        {
+                            fwrite($handler, $fp);
+                        }
 
                         fclose($handler);
+
                         $attachment->update();
                     }
                     else
