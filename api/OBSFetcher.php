@@ -28,20 +28,12 @@ class OBSFetcher extends Importer
         if ( ! file_exists(dirname(__FILE__) . '/config.ini') )
         {
             // for now we bail out if there is no config.ini with login and password details
-            throw new RuntimeException('Please create config.ini file with "login", "password" and, optionally, "host" keys');
+            throw new RuntimeException('Please create config.ini file with "login", "password", "host" keys, and optionally "wget" set to true if you want to use wget for HTTP operations');
         }
         else
         {
             $this->config = parse_ini_file(dirname(__FILE__) . '/config.ini');
-
-            if (isset($this->config['host']))
-            {
-                $this->api = new com_meego_obsconnector_API($this->config['login'], $this->config['password'], $this->config['host']);
-            }
-            else
-            {
-                $this->api = new com_meego_obsconnector_API($this->config['login'], $this->config['password']);
-            }
+            $this->api = new com_meego_obsconnector_API($this->config['login'], $this->config['password'], $this->config['host'], $this->config['wget']);
         }
     }
 
