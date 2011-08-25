@@ -79,10 +79,23 @@ class com_meego_obsconnector_HTTP
 
     public function get_as_stream($url)
     {
-        $context = stream_context_create(array(
-            'http' => array_merge($this->more_options, array('method' => 'GET', 'timeout' => 30)),
-        ));
-        return @fopen($this->buildUrl($url), 'r', false, $context);
+        $retval = 0;
+
+        if (! $this->wget)
+        {
+            $context = stream_context_create(array(
+                'http' => array_merge($this->more_options, array('method' => 'GET', 'timeout' => 30)),
+            ));
+            $content = fopen($this->buildUrl($url), 'r', false, $context);
+        }
+        else
+        {
+            exec('wget ' . $this->wget_options . ' ' . $this->buildUrl($url), $_content, $retval);
+            $content = implode("\n", $_content);
+            unset($_content);
+        }
+
+        return $content;
     }
 
     public function post($url, array $parameters = array())
@@ -121,7 +134,6 @@ class com_meego_obsconnector_HTTP
     {
         return $this->protocol . '://' . $this->auth . $this->prefix . $url;
     }
-
 
     protected function setProxy()
     {
