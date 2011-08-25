@@ -10,7 +10,7 @@ class com_meego_obsconnector_HTTP
 
     protected $more_options = array();
 
-    public function __construct($prefix = '', $protocol = 'http', $wget = false)
+    public function __construct($prefix = '', $protocol = 'http', $wget = false, $wget_options)
     {
         $this->prefix = $prefix;
         $this->protocol = $protocol;
@@ -18,6 +18,7 @@ class com_meego_obsconnector_HTTP
         $this->setProxy();
 
         $this->wget = $wget;
+        $this->wget_options = $wget_options;
     }
 
     public function setAuthentication($user, $password)
@@ -40,7 +41,7 @@ class com_meego_obsconnector_HTTP
      *
      * @return string the contents of the file
      */
-    public function get($url_to_fetch, $apiurl = true, $wget = false)
+    public function get($url_to_fetch, $apiurl = true)
     {
         $retval = 0;
 
@@ -61,7 +62,7 @@ class com_meego_obsconnector_HTTP
         }
         else
         {
-            exec('wget -qO- ' . $url_to_fetch, $_content, $retval);
+            exec('wget ' . $this->wget_options . ' ' . $url_to_fetch, $_content, $retval);
             $content = implode("\n", $_content);
             unset($_content);
         }
