@@ -33,7 +33,7 @@ class OBSFetcher extends Importer
         else
         {
             $this->config = parse_ini_file(dirname(__FILE__) . '/config.ini');
-            $this->api = new com_meego_obsconnector_API($this->config['login'], $this->config['password'], $this->config['host'], $this->config['wget']);
+            $this->api = new com_meego_obsconnector_API($this->config['login'], $this->config['password'], $this->config['host'], $this->config['wget'], $this->config['wget_options']);
         }
     }
 
