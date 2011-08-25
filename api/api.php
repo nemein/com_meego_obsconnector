@@ -12,7 +12,7 @@ class com_meego_obsconnector_API
 
     public $http = null;
 
-    public function __construct($login = null, $password = null, $host = 'api.pub.meego.com')
+    public function __construct($login = null, $password = null, $host = 'api.pub.meego.com', $wget = false)
     {
         $this->host = $host;
 
@@ -25,7 +25,7 @@ class com_meego_obsconnector_API
             $prefix = '/public';
         }
 
-        $this->http = new com_meego_obsconnector_HTTP($host . $prefix, 'https');
+        $this->http = new com_meego_obsconnector_HTTP($host . $prefix, 'https', $wget);
 
         if (   $login
             && $password)
