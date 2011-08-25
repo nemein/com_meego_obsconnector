@@ -347,6 +347,7 @@ class OBSFetcher extends Importer
                             {
                                 try
                                 {
+                                    //$fp is either a stream, or a string if wget is used to fecth content
                                     $fp = $this->api->getPackageSourceFile($project->name, $package_name, $name);
                                 }
                                 catch (RuntimeException $e)
@@ -364,8 +365,15 @@ class OBSFetcher extends Importer
 
                                         $handler = $blob->get_handler('wb');
 
-                                        fwrite($handler, stream_get_contents($fp));
-                                        fclose($fp);
+                                        if (! $this->config['wget'])
+                                        {
+                                            fwrite($handler, stream_get_contents($fp));
+                                            fclose($fp);
+                                        }
+                                        else
+                                        {
+                                            fwrite($handler, $fp);
+                                        }
 
                                         fclose($handler);
                                         $attachment->update();
