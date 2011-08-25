@@ -55,16 +55,17 @@ class com_meego_obsconnector_HTTP
             $context = stream_context_create(array(
                 'http' => array_merge($this->more_options, array(
                     'method' => 'GET',
-                    'timeout' => 10
+                    'timeout' => 30
                 )),
             ));
             $content = file_get_contents($url_to_fetch, false, $context);
         }
         else
         {
-            exec('wget ' . $this->wget_options . ' ' . $url_to_fetch, $_content, $retval);
-            $content = implode("\n", $_content);
-            unset($_content);
+            ob_start();
+            passthru('wget ' . $this->wget_options . ' ' . $url_to_fetch, $retval);
+            $content = ob_get_contents();
+            ob_end_clean();
         }
 
 
@@ -90,9 +91,9 @@ class com_meego_obsconnector_HTTP
         }
         else
         {
-            exec('wget ' . $this->wget_options . ' ' . $this->buildUrl($url), $_content, $retval);
-            $content = implode("\n", $_content);
-            unset($_content);
+            // when using wget we can not return a stream
+            // wget is actually a workaround to some off php -> ssl conection problems
+            $content = $this->get($this->buildUrl($url), false);
         }
 
         return $content;
