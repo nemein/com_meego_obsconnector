@@ -10,7 +10,7 @@ class com_meego_obsconnector_HTTP
 
     protected $more_options = array();
 
-    public function __construct($prefix = '', $protocol = 'http', $wget = false, $wget_options)
+    public function __construct($protocol = 'http', $prefix = '', $wget = false, $wget_options)
     {
         $this->prefix = $prefix;
         $this->protocol = $protocol;
