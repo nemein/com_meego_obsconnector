@@ -10,6 +10,7 @@ require __DIR__.'/../parser/DebXray.php';
  */
 class OBSFetcher extends Importer
 {
+    private $debug = false;
     private $mvc = null;
 
     private $project_name = null;
@@ -476,7 +477,7 @@ class OBSFetcher extends Importer
                         $xray = new RpmXray($this->download_repo_protocol, $this->download_repo_host, $_uri);
                         break;
                     case 'deb':
-                        $xray = new DebXray($this->download_repo_protocol, $this->download_repo_host, $_uri);
+                        $xray = new DebXray($this->download_repo_protocol, $this->download_repo_host, $_uri, $this->config['wget'], $this->config['wget_options'], $this->debug);
                         break;
                     default:
                         throw new RuntimeException("Unknown file extension: " . $package->type . "(should be rpm or deb).");
