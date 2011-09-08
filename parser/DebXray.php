@@ -54,7 +54,7 @@ class DebXray
             throw new RuntimeException('No uri given for DebXray', 2);
         }
 
-        $this->http = new com_meego_obsconnector_HTTP($host, $protocol);
+        $this->http = new com_meego_obsconnector_HTTP($protocol, $host);
 
         $this->location = $protocol . '://' . $host . '/' . $uri;
 
