@@ -42,7 +42,7 @@ class DebXray
     /**
      * Constructor
      */
-    public function __construct($protocol = 'http', $host = null, $uri = null, $debug = false)
+    public function __construct($protocol = 'http', $host = null, $uri = null, $wget = false, $wget_options = '', $debug = false)
     {
         if ( ! $host )
         {
@@ -51,10 +51,10 @@ class DebXray
 
         if ( ! $uri )
         {
-            throw new RuntimeException('No uri given for DebXray', 2);
+            throw new RuntimeException('No URI given for DebXray', 2);
         }
 
-        $this->http = new com_meego_obsconnector_HTTP($protocol, $host);
+        $this->http = new com_meego_obsconnector_HTTP($protocol, $host, $wget, $wget_options);
 
         $this->location = $protocol . '://' . $host . '/' . $uri;
 
