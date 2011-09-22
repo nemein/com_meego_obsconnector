@@ -11,6 +11,9 @@
         <join type="left" class="com_meego_ux">
             <condition left="com_meego_repository:osux" right="com_meego_ux:id" />
         </join>
+        <property name="repoguid" use="com_meego_repository:guid">
+            <description>GUID of the repository</description>
+        </property>
         <property name="repoid" use="com_meego_repository:id">
             <description>Id of the repository</description>
         </property>
