@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Schema xmlns="http://www.midgard-project.org/repligard/1.4">
+
+    <view name="com_meego_package_repository_form" table="com_meego_repository">
+        <join type="left" class="com_meego_project">
+            <condition left="com_meego_repository:project" right="com_meego_project:id" />
+        </join>
+        <join type="left" class="com_meego_os">
+            <condition left="com_meego_repository:osversion" right="com_meego_os:id" />
+        </join>
+        <join type="left" class="com_meego_ux">
+            <condition left="com_meego_repository:osux" right="com_meego_ux:id" />
+        </join>
+        <join type="left" class="midgardmvc_ui_forms_form">
+            <condition left="com_meego_repository:guid" right="midgardmvc_ui_forms_form:parent" />
+        </join>
+        <property name="repoguid" use="com_meego_repository:guid">
+            <description>GUID of the repository</description>
+        </property>
+        <property name="repoid" use="com_meego_repository:id">
+            <description>Id of the repository</description>
+        </property>
+        <property name="reponame" use="com_meego_repository:name">
+            <description>Name for the repository, example: meego_1.1_extras_handset</description>
+        </property>
+        <property name="repotitle" use="com_meego_repository:title">
+            <description>Pretty name for the repository, example: meego_1.1_extras_handset (for armv7el)</description>
+        </property>
+        <property name="repoarch" use="com_meego_repository:arch">
+            <description>Architecture the repository is built for, example: armv7el</description>
+        </property>
+        <property name="projectname" use="com_meego_project:name">
+            <description>Name of the project the repository belongs to, example: home:fal</description>
+        </property>
+        <property name="formtitle" use="midgardmvc_ui_forms_form:title">
+            <description>Title of the form, example: Community QA</description>
+        </property>
+    </view>
+
+</Schema>
