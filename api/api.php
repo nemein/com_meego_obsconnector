@@ -429,6 +429,13 @@ class com_meego_obsconnector_API
         }
         foreach ($_xml->repository as $repository)
         {
+            // skip the repo if it has no path or it is set to be deleted
+            if (   ! $repository->path['project']
+                || $repository->path['project'] == "deleted")
+            {
+                continue;
+            }
+
             $retval['repositories'][strval($repository['name'])]['path'] = strval($repository->path['project']);
 
             // set blank defaults
@@ -439,8 +446,17 @@ class com_meego_obsconnector_API
 
             if ($official_project)
             {
-                // parse the project property of path to determine OS, version, group and UX data
-                $info = explode('_', $repository['name']);
+                // parse the project name to determine OS, version, group and UX data
+                $info = explode(':', $repository->path['project']);
+
+                // for official projects if the 3rd element of the array is set
+                // then we consider that to be the UX
+                // and for later processing we delete that element
+                if (isset($info[2]))
+                {
+                    $info[3] = $info[2];
+                    $info[2] = '';
+                }
             }
             else
             {
