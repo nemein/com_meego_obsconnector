@@ -161,6 +161,7 @@ class OBSFetcher extends Importer
             {
                 echo "\n -> " . $repo_name . "\n";
 
+                // work on allowed OSes only
                 $repo->os = $project_meta['repositories'][$repo_name]['os'];
 
                 if (   is_array($this->config['os_map'])
@@ -471,7 +472,7 @@ class OBSFetcher extends Importer
             // for some info we need a special xray
             try
             {
-                switch($package->type)
+                switch ($package->type)
                 {
                     case 'rpm':
                         $xray = new RpmXray($this->download_repo_protocol, $this->download_repo_host, $_uri);
