@@ -29,6 +29,15 @@
         <property name="repoarch" use="com_meego_repository:arch">
             <description>Architecture the repository is built for, example: armv7el</description>
         </property>
+        <property name="repoos" use="com_meego_os:name">
+            <description>Name of the OS</description>
+        </property>
+        <property name="repoosversion" use="com_meego_os:version">
+            <description>Version of the OS</description>
+        </property>
+        <property name="repoux" use="com_meego_ux:name">
+            <description>UX of the repository</description>
+        </property>
         <property name="projectname" use="com_meego_project:name">
             <description>Name of the project the repository belongs to, example: home:fal</description>
         </property>
