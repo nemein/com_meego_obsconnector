@@ -93,6 +93,9 @@
         <property name="repoid" use="com_meego_repository:id">
             <description>Id of the repository the package belongs to</description>
         </property>
+        <property name="repoguid" use="com_meego_repository:guid">
+            <description>GUID of the repository the package belongs to</description>
+        </property>
         <property name="reponame" use="com_meego_repository:name">
             <description>Name for the repository, example: meego_1.1_extras_handset</description>
         </property>
