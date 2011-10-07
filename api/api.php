@@ -458,13 +458,23 @@ class com_meego_obsconnector_API
                     $info[2] = '';
                 }
 
+                // alter the OS name in case it was configured so
+                // this we do it based on the UX
                 if (isset($info[3]))
                 {
                     $info[3] = mb_strtolower($info[3]);
-                    // alter the OS in case it was configured so
                     if (array_key_exists($info[3], $this->config['ux_map']))
                     {
                         $info[0] = $this->config['ux_map'][$info[3]];
+                    }
+                }
+
+                // override version numbers based on our configuration
+                if (isset($info[1]))
+                {
+                    if (array_key_exists($info[0], $this->config['version_map']))
+                    {
+                        $info[1] = $this->config['version_map'][$info[0]];
                     }
                 }
             }
