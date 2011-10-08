@@ -39,10 +39,16 @@
             <description>UX of the repository</description>
         </property>
         <property name="projectname" use="com_meego_project:name">
-            <description>Name of the project the repository belongs to, example: home:fal</description>
+            <description>Name of the project the repository belongs to, example: MeeGo:1.2:Apps:Testing</description>
         </property>
         <property name="formtitle" use="midgardmvc_ui_forms_form:title">
             <description>Title of the form, example: Community QA</description>
+        </property>
+        <property name="formstart" use="midgardmvc_ui_forms_form:metadata.schedulestart">
+            <description>Date when the form opens</description>
+        </property>
+        <property name="formend" use="midgardmvc_ui_forms_form:metadata.scheduleend">
+            <description>Date when the form closed</description>
         </property>
     </view>
 
