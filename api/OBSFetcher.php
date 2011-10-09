@@ -534,7 +534,7 @@ class OBSFetcher extends Importer
 
                 if ($fp)
                 {
-                    $attachment = $package->create_attachment("install.ymp", "install.ymp", "application/xml");
+                    $attachment = $package->create_attachment("install.ymp", "install.ymp", "text/x-suse-ymp");
 
                     if ($attachment)
                     {
