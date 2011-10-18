@@ -257,15 +257,6 @@ class OBSFetcher extends Importer
 
                     foreach ($builtpackages as $package_name)
                     {
-                        // check if a specific package should be imported
-                        if (   ! is_null($specific_package_name)
-                            && $package_name != $specific_package_name)
-                        {
-                            // this is a no match, so go to next package
-                            $cleanup = false;
-                            continue;
-                        }
-
                         echo "\n     -> package #" . ++$this->package_counter . ': ' . $package_name . "\n";
 
                         try
@@ -284,6 +275,14 @@ class OBSFetcher extends Importer
                         if ($cleanonly)
                         {
                             // only cleanup is requested so we can go to the next package
+                            continue;
+                        }
+
+                        // check if a specific package should be imported
+                        if (   ! is_null($specific_package_name)
+                            && $package_name != $specific_package_name)
+                        {
+                            // this is a no match, so go to next package
                             continue;
                         }
 
@@ -402,13 +401,9 @@ class OBSFetcher extends Importer
                         }
                     }
 
-                    // cleanup only if we don't import a specific package
-                    if ($cleanup)
-                    {
-                        // now cleanup all the packages from our database
-                        // that are not part of this OBS repository
-                        $this->cleanPackages($repo, $fulllist);
-                    }
+                    // now cleanup all the packages from our database
+                    // that are not part of this OBS repository
+                    $this->cleanPackages($repo, $fulllist);
                 }
             }
         }
