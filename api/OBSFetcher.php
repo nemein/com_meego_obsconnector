@@ -252,6 +252,7 @@ class OBSFetcher extends Importer
                         }
                     }
 
+                    $cleanup = true;
                     $fulllist = array();
 
                     foreach ($builtpackages as $package_name)
@@ -261,6 +262,7 @@ class OBSFetcher extends Importer
                             && $package_name != $specific_package_name)
                         {
                             // this is a no match, so go to next package
+                            $cleanup = false;
                             continue;
                         }
 
@@ -400,9 +402,13 @@ class OBSFetcher extends Importer
                         }
                     }
 
-                    // now cleanup all the packages from our database
-                    // that are not part of this OBS repository
-                    $this->cleanPackages($repo, $fulllist);
+                    // cleanup only if we don't import a specific package
+                    if ($cleanup)
+                    {
+                        // now cleanup all the packages from our database
+                        // that are not part of this OBS repository
+                        $this->cleanPackages($repo, $fulllist);
+                    }
                 }
             }
         }
