@@ -197,13 +197,43 @@ class DebianRepositoryFetcher extends Importer
 
                             $fulllist[] = $package->filename;
 
-                            // @todo
-                            $screenshot_names = array();
-
-                            foreach ($screenshot_names as $name)
+                            try
                             {
-                                // @todo: a remote file that should be opened with http->get, or something to get a filepointer
-                                $fp = null;
+                                $image_names = array_filter
+                                (
+                                    $this->api->getPackageSourceFiles($project->name, $package_name),
+
+                                    function($name)
+                                    {
+                                        $retval = false;
+                                        $_icon_marker = 'icon.png';
+                                        $_screenshot_marker = 'screenshot.png';
+
+                                        if (   strpos($name, $_icon_marker) === (strlen($name) - strlen($_icon_marker))
+                                            || strpos($name, $_screenshot_marker) === (strlen($name) - strlen($_screenshot_marker)))
+                                        {
+                                            $retval = true;
+                                        }
+
+                                        return $retval;
+                                    }
+                                );
+                            }
+                            catch (RuntimeException $e)
+                            {
+                                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                            }
+
+                            foreach ($image_names as $name)
+                            {
+                                try
+                                {
+                                    $fp = $this->api->getPackageSourceFile($project->name, $package_name, $name);
+                                }
+                                catch (RuntimeException $e)
+                                {
+                                    echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                                }
 
                                 if ($fp)
                                 {
@@ -430,6 +460,7 @@ class DebianRepositoryFetcher extends Importer
                 }
 
                 $package->name = $details['Package'];
+                $package->parent = $details['Package'];
 
                 if (array_key_exists('Maemo-Display-Name', $details))
                 {
