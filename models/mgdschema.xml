@@ -14,6 +14,9 @@
         <property name="title" type="string" index="yes">
             <description>Pretty name of the package, e.g. Anki the game</description>
         </property>
+        <property name="parent" type="string" index="yes">
+            <description>Name of the parent. In OBS this is the OBS package name.</description>
+        </property>
         <property name="filename" type="string" index="yes">
             <description>Full name of a package, e.g. emacs-mercurial-1.7.1-3.4.armv7l.rpm</description>
         </property>

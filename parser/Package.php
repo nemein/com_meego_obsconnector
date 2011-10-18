@@ -23,6 +23,16 @@ class Package {
     var $title = '';
 
     /**
+     * e.g. amrwb
+     *
+     * This field is important when referring to OBS packages.
+     * In OBS a package name is a meta data. Real package names may be
+     * different.
+     *
+     */
+    var $parent = '';
+
+    /**
      * e.g. amrwb-7.0.0.3-9.1.i586.rpm
      */
     var $filename = '';

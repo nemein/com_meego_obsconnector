@@ -26,6 +26,8 @@ class OBSFetcher extends Importer
      */
     public function __construct()
     {
+        parent::__construct();
+
         if ( ! file_exists(dirname(__FILE__) . '/config.ini') )
         {
             // for now we bail out if there is no config.ini with login and password details
@@ -33,7 +35,6 @@ class OBSFetcher extends Importer
         }
         else
         {
-            $this->config = parse_ini_file(dirname(__FILE__) . '/config.ini');
             $this->api = new com_meego_obsconnector_API($this->config['protocol'], $this->config['host'], $this->config['login'], $this->config['password'], $this->config['wget'], $this->config['wget_options']);
         }
     }
@@ -155,6 +156,13 @@ class OBSFetcher extends Importer
                 echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
             }
 
+            if (! count($repositories))
+            {
+                // clean on local records
+                echo "\n    TODO: No repositories in OBS. Cleaning up local ones.\n";
+                exit;
+            }
+
             // iterate through each and every published repository
             // and dig out the packages
             foreach ($repositories as $repo_name)
@@ -208,23 +216,6 @@ class OBSFetcher extends Importer
                     $repo->osgroup = $project_meta['repositories'][$repo_name]['osgroup'];
                     $repo->osux = $this->getUX($project_meta['repositories'][$repo_name]['osux'], '');
 
-                    if (! $cleanonly)
-                    {
-                        if ($repo->guid)
-                        {
-                            echo '     update: ';
-                            $repo->update();
-                        }
-                        else
-                        {
-                            echo '     create: ';
-                            $repo->create();
-                        }
-                        echo $repo->name . ' (id: ' . $repo->id . '; OS: ' . $repo->os . ', OS id: ' . $repo->osversion . ', ' . $repo->osgroup . ', UX id: ' . $repo->osux . ', OS arch: ' . $repo->arch . ")\n";
-                    }
-
-                    $fulllist = array();
-
                     try
                     {
                         $builtpackages = $this->api->getBuiltPackages($project->name, $repo_name, $arch_name);
@@ -236,8 +227,32 @@ class OBSFetcher extends Importer
 
                     if ( ! count($builtpackages))
                     {
-                        continue;
+                        if ($repo->guid)
+                        {
+                            // clean up the local repo, since it is no longer there in OBS
+                            echo "\n     No built packages in OBS, clean this local repository.\n";
+                        }
                     }
+
+                    if (! $cleanonly)
+                    {
+                        if (count($builtpackages))
+                        {
+                            if ($repo->guid)
+                            {
+                                echo '     update: ';
+                                $repo->update();
+                            }
+                            else
+                            {
+                                echo '     create: ';
+                                $repo->create();
+                            }
+                            echo $repo->name . ' (id: ' . $repo->id . '; OS: ' . $repo->os . ', OS id: ' . $repo->osversion . ', ' . $repo->osgroup . ', UX id: ' . $repo->osux . ', OS arch: ' . $repo->arch . ")\n";
+                        }
+                    }
+
+                    $fulllist = array();
 
                     foreach ($builtpackages as $package_name)
                     {
@@ -440,6 +455,7 @@ class OBSFetcher extends Importer
 
             $package->name = $extinfo->name;
             $package->title = $extinfo->title;
+            $package->parent = $package_name;
             $package->version = $extinfo->version;
             $package->summary = $extinfo->summary;
             $package->description = $extinfo->description;
@@ -495,12 +511,7 @@ class OBSFetcher extends Importer
                     && $e->getCode() == 999)
                 {
                     // if package deletion is OK then return immediately
-                    $result = $this->deletePackage($package);
-
-                    if ($result)
-                    {
-                        return null;
-                    }
+                    $result = $this->deletePackage($package, $project_name);
                 }
             }
 

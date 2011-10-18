@@ -5,13 +5,14 @@
  */
 abstract class Importer
 {
-    private $config = null;
+    public $config = null;
 
     /**
      * @todo: docs
      */
     public function __construct()
     {
+        $this->config = parse_ini_file(dirname(__FILE__) . '/config.ini');
     }
 
     /**
@@ -459,7 +460,8 @@ abstract class Importer
      *
      * @return mixed package object
      */
-    public function getPackageByFileName($filename = null, $repository = null) {
+    public function getPackageByFileName($filename = null, $repository = null)
+    {
         $storage = new midgard_query_storage('com_meego_package');
 
         $qc = new midgard_query_constraint_group('AND');
@@ -765,10 +767,12 @@ abstract class Importer
      * Used only if during an update we notice that a package is no longer available in a repositor
      *
      * @param object com_meego_package object
+     * @param string the project tha package belongs to
+     *               needed to remove the QA file that are created by the Apps web app
      *
      * @return boolean true if operation succeeded, false otherwise
      */
-    public function deletePackage($package)
+    public function deletePackage($package, $project_name = '')
     {
         $retval = false;
         //$object = new com_meego_package($guid);
@@ -811,6 +815,23 @@ abstract class Importer
             $_mc = midgard_connection::get_instance();
             echo $_mc->get_error_string() . "\n";
         }
+
+        if ($retval)
+        {
+            $qa_file = $this->config['qa_path'] . '/' . $project_name . '/' . $package->parent . '.txt';
+
+            echo "              looking for QA file: " . $qa_file . "\n";
+
+            if (is_file($qa_file))
+            {
+                $ret = unlink($qa_file);
+                if ($ret)
+                {
+                    echo "              removed QA file:     " . $qa_file . "\n";
+                }
+            }
+        }
+
         return $retval;
     }
 
@@ -848,7 +869,9 @@ abstract class Importer
             {
                 $found = true;
                 // the package is not in the list, so remove it from db
-                $retval = $this->deletePackage($oldpackage);
+                $project = new com_meego_project($repo->project);
+                $retval = $this->deletePackage($oldpackage, $project->name);
+                unset($project);
             }
         }
 

@@ -45,6 +45,9 @@
         <property name="packagefilename" use="com_meego_package:filename">
             <description>Full name of the package, example: libacl-devel-2.2.49-12.1.armv7l.rpm</description>
         </property>
+        <property name="packageparent" use="com_meego_package:parent">
+            <description>Name of the parent. In OBS it is the OBS package name.</description>
+        </property>
         <property name="packageversion" use="com_meego_package:version">
             <description>Version number of the package, example: 2.2.49</description>
         </property>
