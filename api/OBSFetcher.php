@@ -546,7 +546,7 @@ class OBSFetcher extends Importer
 
                 if ($fp)
                 {
-                    $attachment = $package->create_attachment("install.ymp", "install.ymp", "text/x-suse-ymp");
+                    $attachment = $package->create_attachment($package_name . "_install.ymp", $package_name . "_install.ymp", "text/x-suse-ymp");
 
                     if ($attachment)
                     {
@@ -575,7 +575,7 @@ class OBSFetcher extends Importer
 
                         foreach ($attachments as $attachment)
                         {
-                            if ($attachment->name == "install.ymp")
+                            if ($attachment->name == $package_name . "_install.ymp")
                             {
                                 break;
                             }
