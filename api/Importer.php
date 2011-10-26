@@ -68,6 +68,45 @@ abstract class Importer
             }
         }
 
+        // check if this category is already mapped to a base category
+        $q = new midgard_query_select(new midgard_query_storage('com_meego_package_category_relation'));
+
+        $qc = new midgard_query_constraint(
+            new midgard_query_property('packagecategory'),
+            '=',
+            new midgard_query_value($prev->id)
+        );
+
+        $q->set_constraint($qc);
+        $q->execute();
+        $results = $q->list_objects();
+
+        if (! count($results))
+        {
+            // check if there is an "Other" basecategory
+            $q = new midgard_query_select(new midgard_query_storage('com_meego_package_basecategory'));
+
+            $qc = new midgard_query_constraint(
+                new midgard_query_property('name'),
+                '=',
+                new midgard_query_value('Other')
+            );
+
+            $q->set_constraint($qc);
+            $q->execute();
+            $results = $q->list_objects();
+
+            if (count($results))
+            {
+                // map this category to "Other" by default
+                $relation = new com_meego_package_category_relation;
+                $relation->basecategory = $results[0]->id;
+                $relation->packagecategory = $prev->id;
+                $relation->create();
+                echo '           package category ' . $group_string . ' is mapped to ' . $results[0]->name . "\n";
+            }
+        }
+
         return $prev->id;
     }
 
