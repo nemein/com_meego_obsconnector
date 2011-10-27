@@ -197,6 +197,9 @@
         <property name="packagename" type="string" index="yes">
             <description>The package name</description>
         </property>
+        <property name="packageguid" type="guid">
+            <description>GUID of the exact package</description>
+        </property>
         <property name="repository" type="unsigned integer" link="com_meego_repository:id" parentfield="repository">
             <description>ID of the repository this package belongs to</description>
         </property>
