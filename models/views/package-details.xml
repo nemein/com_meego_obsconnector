@@ -18,8 +18,7 @@
             <condition left="com_meego_repository:project" right="com_meego_project:id" />
         </join>
         <join type="left" class="com_meego_package_statistics_calculated">
-            <condition left="com_meego_package:repository" right="com_meego_package_statistics_calculated:repository" />
-            <condition left="com_meego_package:name" right="com_meego_package_statistics_calculated:packagename" />
+            <condition left="com_meego_package:guid" right="com_meego_package_statistics_calculated:packageguid" />
         </join>
         <join type="left" class="com_meego_license">
             <condition left="com_meego_package:license" right="com_meego_license:id" />
