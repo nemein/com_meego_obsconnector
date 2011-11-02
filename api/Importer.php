@@ -919,6 +919,126 @@ abstract class Importer
             echo "              no cleanup needed\n";
         }
     }
-}
 
+    /**
+     * Creates a role object for the package
+     */
+    public function createRole($package_guid, $userid, $role)
+    {
+        $storage = new midgard_query_storage('midgard_user');
+        $q = new midgard_query_select($storage);
+
+        $q->set_constraint(new midgard_query_constraint (
+            new midgard_query_property('login'),
+            '=',
+            new midgard_query_value($userid)
+        ));
+
+        $q->toggle_readonly(false);
+        $q->execute();
+
+        $users = $q->list_objects();
+
+        if (count($users))
+        {
+            $user = $users[0];
+        }
+        else
+        {
+            $user = $this->createUser($userid);
+        }
+
+        // check if this role is already set
+        midgard_error::info(__CLASS__ . ' Check if role exists: (' . $package_guid . ', ' . $userid . ', ' . $role . ')');
+
+        $storage = new midgard_query_storage('com_meego_package_role');
+        $q = new midgard_query_select($storage);
+
+        $qc = new midgard_query_constraint_group('AND');
+
+        $qc->add_constraint(new midgard_query_constraint (
+            new midgard_query_property('package'),
+            '=',
+            new midgard_query_value($package_guid)
+        ));
+        $qc->add_constraint(new midgard_query_constraint (
+            new midgard_query_property('user'),
+            '=',
+            new midgard_query_value($user->guid)
+        ));
+        $qc->add_constraint(new midgard_query_constraint (
+            new midgard_query_property('role'),
+            '=',
+            new midgard_query_value($role)
+        ));
+
+        $q->set_constraint($qc);
+        $q->execute();
+
+        $roles = $q->list_objects();
+
+        if (! count($roles))
+        {
+            $role_obj = new com_meego_package_role();
+            $role_obj->package = $package_guid;
+            $role_obj->user = $user->guid;
+            $role_obj->role = $role;
+
+            if (! $role_obj->create())
+            {
+                $error = midgard_connection::get_instance()->get_error_string();
+                midgard_error::error(__CLASS__ . " Creating role object failed: " . $error);
+            }
+            midgard_error::info(__CLASS__ . " Creating role object succeeded: " . $role_obj->guid);
+        }
+        else
+        {
+            midgard_error::info(__CLASS__ . " Role object already exists: " . $roles[0]->guid);
+        }
+    }
+
+    /**
+     * Creates and returns a midgard_person object
+     *
+     */
+    private function createUser($login)
+    {
+        # create the person object
+        $person = new midgard_person();
+
+        $person->firstname = 'imported';
+        $person->lastname = 'user';
+
+        if ( ! $person->create() )
+        {
+            $error = midgard_connection::get_instance()->get_error_string();
+            midgard_error::error(__CLASS__ . " Failed to create midgard person: " . $error);
+            return false;
+        }
+        else
+        {
+            midgard_error::info(__CLASS__ . " Created midgard person: " . $person->guid);
+
+            $user = new midgard_user();
+            $user->login = $login;
+            $user->password = '';
+            $user->usertype = 1;
+
+            $user->authtype = ($this->config['default_auth_type']) ? $this->config['default_auth_type'] : 'SHA1';
+            $user->active = true;
+            $user->set_person($person);
+
+            if ( ! $user->create() )
+            {
+                $error = midgard_connection::get_instance()->get_error_string();
+                midgard_error::error(__CLASS__ . "Failed to create midgard user: " . $error);
+                return false;
+            }
+
+            midgard_error::info(__CLASS__ . " Created midgard user: " . $user->login);
+        }
+
+        return $user;
+    }
+}
 ?>

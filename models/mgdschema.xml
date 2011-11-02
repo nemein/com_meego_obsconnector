@@ -38,6 +38,9 @@
         <property name="license" type="unsigned integer" link="com_meego_license:id">
             <description>Package license ID</description>
         </property>
+        <property name="size" type="unsigned integer">
+            <description>Package size in bytes</description>
+        </property>
         <property name="homepageurl" type="string">
             <description>Usually points to an upstream project's web site.</description>
         </property>
@@ -269,6 +272,24 @@
         </property>
         <property name="url" type="string">
             <description>URL pointing to an intro page of the UX</description>
+        </property>
+    </type>
+
+    <!--
+        roles assigned to a com_meego_package (maintainer, downloader, bugowner etc)
+    -->
+    <type name="com_meego_package_role" table="com_meego_package_role" metadata="false">
+        <property name="id" type="unsigned integer" primaryfield="id" index="yes">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="package" type="guid" index="yes">
+            <description>Package guid</description>
+        </property>
+        <property name="user" type="guid" index="yes">
+            <description>User object guid</description>
+        </property>
+        <property name="role" type="string">
+            <description>The role definition: possile values: maintainer, packager, bugowner</description>
         </property>
     </type>
 

@@ -366,13 +366,38 @@ class com_meego_obsconnector_API
     {
         $_xml = simplexml_load_string($xml);
 
-        $retval = array('owners' => array());
+        $retval = array();
 
         foreach ($_xml->person as $person)
         {
-            if ($person['role'] == 'maintainer')
+            $role = '';
+            $userid = '';
+
+            foreach($person->attributes() as $key => $value)
             {
-                $retval['owners'][] = strval($person['userid']);
+                switch ($key)
+                {
+                    case 'userid':
+                        $userid = strval($value);
+                        break;
+                    case 'role':
+                        $role = strval($value);
+                        break;
+                }
+
+                if (   $role
+                    && $userid)
+                {
+                    if (! array_key_exists($role, $retval))
+                    {
+                        $retval[$role] = array();
+                    }
+
+                    $retval[$role][] = $userid;
+
+                    $role = '';
+                    $userid = '';
+                }
             }
         }
 

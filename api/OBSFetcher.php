@@ -11,7 +11,6 @@ require __DIR__.'/../parser/DebXray.php';
 class OBSFetcher extends Importer
 {
     private $debug = false;
-    private $mvc = null;
 
     private $project_name = null;
     private $package_counter = 0;
@@ -456,6 +455,7 @@ class OBSFetcher extends Importer
             // deb or rpm
             $package->type = substr($package->filename, strrpos($package->filename, '.') + 1);
 
+            $package->size = $extinfo->size;
             $package->name = $extinfo->name;
             $package->title = $extinfo->title;
             $package->parent = $package_name;
@@ -598,6 +598,18 @@ class OBSFetcher extends Importer
             catch (RuntimeException $e)
             {
                 echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+            }
+
+            // get the roles and create the necessary role objects
+            $roles = $this->api->getPackageMeta($project_name, $package_name);
+
+            foreach ($roles as $role => $userids)
+            {
+                foreach($userids as $userid)
+                {
+                    echo '           create role: ' . $userid . ' = ' . $role . ' (' . $package->guid . ")\n";
+                    $this->createRole($package->guid, $userid, $role);
+                }
             }
 
             // add relations by calling the parent class

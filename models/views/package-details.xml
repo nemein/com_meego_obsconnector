@@ -86,6 +86,9 @@
         <property name="packagescore" use="com_meego_package:metadata.score">
             <description>Package score</description>
         </property>
+        <property name="packagesize" use="com_meego_package:size">
+            <description>Package score</description>
+        </property>
         <property name="basecategory" use="com_meego_package_basecategory:id">
             <description>Id of the category the package belongs to</description>
         </property>
