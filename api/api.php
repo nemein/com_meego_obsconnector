@@ -291,7 +291,7 @@ class com_meego_obsconnector_API
         $extension = preg_replace('/.*\.(.*)/', '\1', strval($_xml['filename']));
 
         $retval->name = strval($_xml->name);
-        $retval->title = ucfirst($retval->name);
+        $retval->title = $retval->name;
         $retval->filename = $_xml['filename'];
         $retval->version = strval($_xml->version);
 
@@ -332,7 +332,7 @@ class com_meego_obsconnector_API
                     $_constraint = '=';
 
                     $dependency = new Dependency($_name, $_constraint, $_version);
-                    $dependency->title = ucfirst($dependency->name);
+                    $dependency->title = $dependency->name;
 
                     // educated guess about the exact filename of the dependency
                     $_filename = $_name . '-' . $_version . '-' . $_release . '.' . $_arch . '.' . $extension;
