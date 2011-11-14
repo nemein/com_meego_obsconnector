@@ -180,33 +180,33 @@ class com_meego_obsconnector_HTTP
     /**
      * Downloads any file directly from an URL
      *
-     * @param string URL to  be downloaded
+     * @param string URL to be downloaded
      * @param string location the file should be saved to
      *
      * @return string location the file it was saved to or null in case of error
      */
     public function download($url, $location)
     {
-        $handle = fopen($location, 'c');
+        $txt = $this->get($url, false);
+        if ($txt)
+        {
+            $handle = fopen($location, 'wb+');
 
-        if ($handle === false)
-        {
-            throw new RuntimeException('Unable to open file for writing: ' . $location);
-            return null;
-        }
-        else
-        {
-            $txt = $this->get($url, false);
-            if ($txt)
+            if ($handle === false)
             {
-                $retval = @fwrite($handle, $txt);
+                @fclose($handle);
+                throw new RuntimeException('Unable to open file for writing: ' . $location);
+            }
+            else
+            {
+                $retval = fwrite($handle, $txt);
                 if ($retval === false)
                 {
+                    @fclose($handle);
                     throw new RuntimeException('Unable to save to: ' . $location);
                 }
             }
-            @fclose($handle);
-            return $location;
         }
+        return $location;
     }
 }
