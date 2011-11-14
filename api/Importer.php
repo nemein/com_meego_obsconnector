@@ -1038,6 +1038,18 @@ abstract class Importer
             midgard_error::info(__CLASS__ . " Created midgard user: " . $user->login);
         }
 
+        // @todo: not sure if this is the best solution;
+        // but it is simple to create midgardmvc_account objects
+
+        // this does not work, as we are not an MVC app
+        /*
+            $dummy_session = new midgardmvc_core_login_session();
+            $dummy_session->userid = '';
+            $dummy_session->username = $user->login;
+            $dummy_session->authtype = $user->authtype;
+            midgardmvc_account_injector::create_account_from_session($dummy_session);
+            unset($dummy_session);
+        */
         return $user;
     }
 }
