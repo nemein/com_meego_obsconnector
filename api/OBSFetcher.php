@@ -558,14 +558,25 @@ class OBSFetcher extends Importer
 
                         if (! $this->config['wget'])
                         {
-                            fwrite($handler, stream_get_contents($fp));
-                            fclose($fp);
+                            $ymp = stream_get_contents($fp);
                         }
                         else
                         {
-                            fwrite($handler, $fp);
+                            $ymp = $fp;
                         }
 
+                        // replace name with the package name
+                        $ymp = self::replace_name_with_packagename($ymp, $package->filename);
+
+                        // write the attachment to the file system
+                        fwrite($handler, $ymp);
+
+                        if (! $this->config['wget'])
+                        {
+                            fclose($fp);
+                        }
+
+                        // close the attachment's handler
                         fclose($handler);
 
                         $attachment->update();
@@ -579,6 +590,11 @@ class OBSFetcher extends Importer
                         {
                             if ($attachment->name == $package_name . "_install.ymp")
                             {
+                                $blob = new midgard_blob($attachment);
+                                $handler = $blob->get_handler('rb+');
+                                $ymp = self::replace_name_with_packagename($blob->read_content(), $package->filename);
+                                fwrite($handler, $ymp);
+                                fclose($handler);
                                 break;
                             }
                         }
@@ -617,5 +633,26 @@ class OBSFetcher extends Importer
         }
 
         return $package;
+    }
+
+    /**
+     * Replaces the Name inside the YMP file with a real package name
+     * @param string content of the ymp file
+     * @param string the package name
+     */
+    public function replace_name_with_packagename($ymp, $packagename)
+    {
+        $retval = preg_replace('|\<software\>\s*\<item\>\s*\<name\>.*\<\/name\>|', '<software><item><name>' . $packagename . '</name>', $ymp);
+        if (! $retval)
+        {
+            $retval = $ymp;
+            echo '           update ymp file with ' . $packagename . " failed\n";
+
+        }
+        else
+        {
+            echo '           update ymp file with ' . $packagename . " succeeded\n";
+        }
+        return $retval;
     }
 }
