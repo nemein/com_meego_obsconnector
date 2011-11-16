@@ -642,7 +642,7 @@ class OBSFetcher extends Importer
      */
     public function replace_name_with_packagename($ymp, $packagename)
     {
-        $retval = preg_replace('|\<software\>\s*\<item\>\s*\<name\>.*\<\/name\>|', "<software>\n<item>\n<name>" . $packagename . "</name>", $ymp);
+        $retval = preg_replace('|\<software\>\s*\<item\>\s*\<name\>[^<].*\<\/name\>|', "<software>\n<item>\n<name>" . $packagename . "</name>", $ymp);
         if (! $retval)
         {
             $retval = $ymp;
