@@ -566,7 +566,7 @@ class OBSFetcher extends Importer
                         }
 
                         // replace name with the package name
-                        $ymp = self::replace_name_with_packagename($ymp, $package->filename);
+                        $ymp = self::replace_name_with_packagename($ymp, $package->name);
 
                         // write the attachment to the file system
                         fwrite($handler, $ymp);
@@ -592,7 +592,7 @@ class OBSFetcher extends Importer
                             {
                                 $blob = new midgard_blob($attachment);
                                 $handler = $blob->get_handler('rb+');
-                                $ymp = self::replace_name_with_packagename($blob->read_content(), $package->filename);
+                                $ymp = self::replace_name_with_packagename($blob->read_content(), $package->name);
                                 fwrite($handler, $ymp);
                                 fclose($handler);
                                 break;
