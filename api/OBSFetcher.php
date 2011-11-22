@@ -55,21 +55,21 @@ class OBSFetcher extends Importer
         }
         catch (RuntimeException $e)
         {
-            echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+            $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
         }
 
         // iterate through each project to get all its repositories and
         // eventually all available packages within the repositories
         foreach ($projects as $project_name)
         {
-            echo "\n#" . ++$i . ' Project: ' . $project_name . "\n";
+            $this->log('#' . ++$i . ' Project: ' . $project_name);
 
             if ($cleanonly)
             {
-                echo "Requested clean up only\n";
+                $this->log('Requested clean up only');
             }
 
-            echo "---------------------------------------------------------\n";
+            $this->log('---------------------------------------------------------');
 
             $this->go($project_name, null, $cleanonly);
         }
@@ -110,8 +110,8 @@ class OBSFetcher extends Importer
             if ($e->getCode() == 990)
             {
                 // failed to fetch project meta, bail out
-                echo "Failed to fetch meta information of project: $project_name\n";
-                echo "The project may not exist anymore\n";
+                $this->log("Failed to fetch meta information of project: $project_name");
+                $this->log("The project may not exist anymore");
 
                 if ($project->guid)
                 {
@@ -132,21 +132,21 @@ class OBSFetcher extends Importer
         {
             if ($project->guid)
             {
-                echo 'Update project record: ' . $project->name;
+                $log = 'Update project record: ' . $project->name;
                 $project->update();
             }
             else
             {
-                echo 'Create project record: ' . $project->name;
+                $log = 'Create project record: ' . $project->name;
                 $project->create();
             }
-            echo ' (' . $project->title . ', ' . $project->description . ")\n";
+            $this->log($log . ' (' . $project->title . ', ' . $project->description . ')');
         }
 
         if ($project->id)
         {
             // get all repositories this project has published
-            echo "\nRepositories in $project->name:\n";
+            $this->log('Repositories in ' . $project->name . ':');
 
             try
             {
@@ -154,13 +154,13 @@ class OBSFetcher extends Importer
             }
             catch (RuntimeException $e)
             {
-                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
             }
 
             if (! count($repositories))
             {
                 // clean on local records
-                echo "\n    TODO: No repositories in OBS. Cleaning up local ones.\n";
+                $this->log('    TODO: No repositories in OBS. Cleaning up local ones.');
                 exit;
             }
 
@@ -168,7 +168,7 @@ class OBSFetcher extends Importer
             // and dig out the packages
             foreach ($repositories as $repo_name)
             {
-                echo "\n -> " . $repo_name . "\n";
+                $this->log($repo_name);
 
                 // work on allowed OSes only
                 $repo->os = $project_meta['repositories'][$repo_name]['os'];
@@ -176,7 +176,7 @@ class OBSFetcher extends Importer
                 if (   is_array($this->config['os_map'])
                     && array_search($repo->os, $this->config['os_map']) === false)
                 {
-                    echo "    skipped due to wrong OS: " . $repo->os . "\n";
+                    $this->log('    skipped due to wrong OS: ' . $repo->os);
                     continue;
                 }
 
@@ -186,7 +186,7 @@ class OBSFetcher extends Importer
                 }
                 catch (RuntimeException $e)
                 {
-                    echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                    $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
                 }
 
                 if ( ! count($architectures) )
@@ -197,7 +197,7 @@ class OBSFetcher extends Importer
                 // get all available architectures within this repository
                 foreach ($architectures as $arch_name)
                 {
-                    echo "\n  -> " . $arch_name . "\n";
+                    $this->log('  -> ' . $arch_name);
 
                     // get a com_meego_repository object
                     $repo = $this->getRepository($repo_name, $arch_name, $project->id);
@@ -223,7 +223,7 @@ class OBSFetcher extends Importer
                     }
                     catch (RuntimeException $e)
                     {
-                        echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                        $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
                     }
 
                     if ( ! count($builtpackages))
@@ -231,7 +231,7 @@ class OBSFetcher extends Importer
                         if ($repo->guid)
                         {
                             // clean up the local repo, since it is no longer there in OBS
-                            echo "\n     No built packages in OBS, clean this local repository.\n";
+                            $this->log('     No built packages in OBS, clean this local repository.');
                         }
                     }
 
@@ -241,15 +241,15 @@ class OBSFetcher extends Importer
                         {
                             if ($repo->guid)
                             {
-                                echo '     update: ';
+                                $log = '     update: ';
                                 $repo->update();
                             }
                             else
                             {
-                                echo '     create: ';
+                                $log = '     create: ';
                                 $repo->create();
                             }
-                            echo $repo->name . ' (id: ' . $repo->id . '; OS: ' . $repo->os . ', OS id: ' . $repo->osversion . ', ' . $repo->osgroup . ', UX id: ' . $repo->osux . ', OS arch: ' . $repo->arch . ")\n";
+                            $this->log($log . $repo->name . ' (id: ' . $repo->id . '; OS: ' . $repo->os . ', OS id: ' . $repo->osversion . ', ' . $repo->osgroup . ', UX id: ' . $repo->osux . ', OS arch: ' . $repo->arch . ')');
                         }
                     }
 
@@ -258,7 +258,7 @@ class OBSFetcher extends Importer
 
                     foreach ($builtpackages as $package_name)
                     {
-                        echo "\n     -> package #" . ++$this->package_counter . ': ' . $package_name . "\n";
+                        $this->log('     -> package #' . ++$this->package_counter . ': ' . $package_name);
 
                         try
                         {
@@ -266,7 +266,7 @@ class OBSFetcher extends Importer
                         }
                         catch (RuntimeException $e)
                         {
-                            echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                            $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
                         }
 
                         // this list contains all binaries built for all packages in that repo
@@ -289,7 +289,7 @@ class OBSFetcher extends Importer
 
                         foreach($newlist as $file_name)
                         {
-                            echo "\n        -> binary #" . ++$this->build_counter . ': ' . $file_name . "\n";
+                            $this->log('        -> binary #' . ++$this->build_counter . ': ' . $file_name);
 
                             // the getBuiltBinaryList will also return binary names that are
                             // built for different architecture
@@ -319,7 +319,7 @@ class OBSFetcher extends Importer
                                 {
                                     if ($bin_arch != 'noarch')
                                     {
-                                        echo '        skip arch: ' . $bin_arch . ' (' . $file_name . ")\n";
+                                        $this->log('        skip arch: ' . $bin_arch . ' (' . $file_name . ')');
                                         continue;
                                     }
                                 }
@@ -359,7 +359,7 @@ class OBSFetcher extends Importer
                             }
                             catch (RuntimeException $e)
                             {
-                                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                                $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
                             }
 
                             foreach ($image_names as $name)
@@ -371,7 +371,7 @@ class OBSFetcher extends Importer
                                 }
                                 catch (RuntimeException $e)
                                 {
-                                    echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                                    $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
                                 }
 
                                 if ($fp)
@@ -430,7 +430,7 @@ class OBSFetcher extends Importer
             }
             catch (RuntimeException $e)
             {
-                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
             }
         }
         else
@@ -505,7 +505,7 @@ class OBSFetcher extends Importer
             }
             catch (RuntimeException $e)
             {
-                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
 
                 // if there was a problem during xray (with code 999)
                 // then it almost certainly means that the package no longer exists in the repository
@@ -528,12 +528,12 @@ class OBSFetcher extends Importer
             // call the parent
             if ($package->guid)
             {
-                echo '           update: ' . $package->filename . ' (name: ' . $package->name . ")\n";
+                $this->log('           update: ' . $package->filename . ' (name: ' . $package->name . ')');
                 $package->update();
             }
             else
             {
-                echo '           create: ' . $package->filename . ' (name: ' . $package->name . ")\n";
+                $this->log('           create: ' . $package->filename . ' (name: ' . $package->name . ')');
                 $package->create();
             }
 
@@ -613,7 +613,7 @@ class OBSFetcher extends Importer
             }
             catch (RuntimeException $e)
             {
-                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
             }
 
             // get the roles and create the necessary role objects
@@ -623,7 +623,7 @@ class OBSFetcher extends Importer
             {
                 foreach($userids as $userid)
                 {
-                    echo '           create role: ' . $userid . ' = ' . $role . ' (' . $package->guid . ")\n";
+                    $this->log('           create role: ' . $userid . ' = ' . $role . ' (' . $package->guid . ')');
                     $this->createRole($package->guid, $userid, $role);
                 }
             }
@@ -646,12 +646,12 @@ class OBSFetcher extends Importer
         if (! $retval)
         {
             $retval = $ymp;
-            echo '           update ymp file with ' . $packagename . " failed\n";
+            $this->log('           update ymp file with ' . $packagename . ' failed');
 
         }
         else
         {
-            echo '           update ymp file with ' . $packagename . " succeeded\n";
+            $this->log('           update ymp file with ' . $packagename . ' succeeded');
         }
         return $retval;
     }

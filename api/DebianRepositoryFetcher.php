@@ -96,20 +96,20 @@ class DebianRepositoryFetcher extends Importer
         {
             if ($project->guid)
             {
-                echo 'Update project record: ' . $project->name;
+                $log = 'Update project record: ' . $project->name;
                 $project->update();
             }
             else
             {
-                echo 'Create project record: ' . $project->name;
+                $log = 'Create project record: ' . $project->name;
                 $project->create();
             }
-            echo ' (' . $project->title . ', ' . $project->description . ")\n";
+            $this->log($log . ' (' . $project->title . ', ' . $project->description . ')');
         }
 
         if ($project->id)
         {
-            echo "\nComponents in $project->name:\n";
+            $this->log("\nComponents in $project->name:");
 
             // get all components (ie repositories in the database) this Suite contains
             $repositories = explode(' ', $release['Components']);
@@ -118,14 +118,14 @@ class DebianRepositoryFetcher extends Importer
             // and dig out the packages
             foreach ($repositories as $repo_name)
             {
-                echo "\n -> " . $repo_name . "\n";
+                $this->log("\n -> " . $repo_name);
 
                 $architectures = explode(' ', $release['Architectures']);
 
                 // get all available architectures within this repository
                 foreach ($architectures as $arch_name)
                 {
-                    echo "\n  -> " . $arch_name . "\n";
+                    $this->log("\n  -> " . $arch_name);
 
                     // get a com_meego_repository object
                     $repo = $this->getRepository($repo_name, $arch_name, $project->id);
@@ -147,15 +147,15 @@ class DebianRepositoryFetcher extends Importer
                     {
                         if ($repo->guid)
                         {
-                            echo '     update: ';
+                            $log = '     update: ';
                             $repo->update();
                         }
                         else
                         {
-                            echo '     create: ';
+                            $log = '     create: ';
                             $repo->create();
                         }
-                        echo $repo->name . ' (id: ' . $repo->id . '; ' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
+                        $this->log($log . $repo->name . ' (id: ' . $repo->id . '; ' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ')');
                     }
 
                     $fulllist = array();
@@ -177,7 +177,7 @@ class DebianRepositoryFetcher extends Importer
                         // iterate through each versions
                         foreach ($versions as $package_version => $details)
                         {
-                            echo "\n     -> package #" . ++$this->package_counter . ': ' . $package_name . ' ' . $package_version . "\n";
+                            $this->log("\n     -> package #" . ++$this->package_counter . ': ' . $package_name . ' ' . $package_version);
 
                             if ($cleanonly)
                             {
@@ -221,7 +221,7 @@ class DebianRepositoryFetcher extends Importer
                             }
                             catch (RuntimeException $e)
                             {
-                                echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                                $this->log("\n         [EXCEPTION: " . $e->getMessage() . "]\n");
                             }
 
                             foreach ($image_names as $name)
@@ -232,7 +232,7 @@ class DebianRepositoryFetcher extends Importer
                                 }
                                 catch (RuntimeException $e)
                                 {
-                                    echo "\n         [EXCEPTION: " . $e->getMessage()."]\n\n";
+                                    $this->log("\n         [EXCEPTION: " . $e->getMessage() . "]\n");
                                 }
 
                                 if ($fp)
@@ -499,12 +499,12 @@ class DebianRepositoryFetcher extends Importer
                 // update or create the package
                 if ($package->guid)
                 {
-                    echo '           update: ' . $package->filename . ' (name: ' . $package->name . ")\n";
+                    $this->log('           update: ' . $package->filename . ' (name: ' . $package->name . ')');
                     $package->update();
                 }
                 else
                 {
-                    echo '           create: ' . $package->filename . ' (name: ' . $package->name . ")\n";
+                    $this->log('           create: ' . $package->filename . ' (name: ' . $package->name . ')');
                     $package->create();
                 }
 
@@ -536,7 +536,7 @@ class DebianRepositoryFetcher extends Importer
                     {
                         $relations[$type] = $this->parseRelationLine($details[$type]);
                     }
-                    #echo '           found ' . count($relations[$type]) . ' ' . $type . " relations\n";
+                    #$this->log('           found ' . count($relations[$type]) . ' ' . $type . ' relations');
                 }
                 // add relations by calling the parent class
                 $this->addRelations((object)$relations, $package);

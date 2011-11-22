@@ -28,6 +28,17 @@ abstract class Importer
     abstract public function go($project_name = null, $specific_package_name = null, $cleanonly = false);
 
     /**
+     * Logging
+     *
+     * @param string the string to log
+     */
+    public function log($message)
+    {
+        $message = date('Y-m-d H:i:s') . ' ' . $message . "\n";
+        echo $message;
+    }
+
+    /**
      * @todo: docs
      */
     public function getCategory($group_string)
@@ -103,7 +114,7 @@ abstract class Importer
                 $relation->basecategory = $results[0]->id;
                 $relation->packagecategory = $prev->id;
                 $relation->create();
-                echo '           package category ' . $group_string . ' is mapped to ' . $results[0]->name . "\n";
+                $this->log('           package category ' . $group_string . ' is mapped to ' . $results[0]->name);
             }
         }
 
@@ -149,7 +160,7 @@ abstract class Importer
 
         if (! count($relations))
         {
-            echo "           package is not required by others\n";
+            $this->log('           package is not required by others');
         }
         else
         {
@@ -161,7 +172,7 @@ abstract class Importer
             {
                 if ($relation->to != 0)
                 {
-                    echo '           package is in relation but "to" field is already set. relation id: ' . $relation->id . "\n";
+                    $this->log('           package is in relation but "to" field is already set. relation id: ' . $relation->id);
                     continue;
                 }
 
@@ -176,7 +187,7 @@ abstract class Importer
                 if ($repository_a->arch == $repository_b->arch)
                 {
                     // we can safely update the to field of this relation
-                    echo '           package is in relation with ' . $relation->from . ', update "to" field. relation id:' . $relation->id . "\n";
+                    $this->log('           package is in relation with ' . $relation->from . ', update "to" field. relation id:' . $relation->id);
                     $_relation = new com_meego_package_relation($relation->guid);
                     $_relation->to = $package->id;
                     $_relation->update();
@@ -280,20 +291,20 @@ abstract class Importer
         {
             foreach ($results as $relation)
             {
-                echo '           check if ' . $parent->name . ' still ' . $type . ': ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
+                $this->log('           check if ' . $parent->name . ' still ' . $type . ': ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version);
                 foreach ($relatives as $relative)
                 {
-                    //echo '            Compare: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . ' <<<---->>> ' . $relative->name . ' ' . $relative->constraint . ' ' . $relative->version . "\n";
+                    //$this->log('            Compare: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . ' <<<---->>> ' . $relative->name . ' ' . $relative->constraint . ' ' . $relative->version);
                     if (   ! ($relation->toname == $relative->name
                         && $relation->constraint == $relative->constraint
                         && $relation->version == $relative->version ))
                     {
-                        //echo '            mark deleted ' . $relation->id . "\n";
+                        //$this->log('            mark deleted ' . $relation->id);
                         $_deleted[$relation->guid] = $relation->id;
                     }
                     else
                     {
-                        //echo '            mark kept: ' . $relation->id . "\n";
+                        //$this->log('            mark kept: ' . $relation->id);
                         unset($_deleted[$relation->guid]);
                         break;
                     }
@@ -306,7 +317,7 @@ abstract class Importer
                 if (is_object($relation))
                 {
                     $relation->delete();
-                    echo '           delete ' . $type . ' of package ' . $parent->name . ': relation guid: ' . $guid . ' (id: ' . $value . ')' . "\n";
+                    $this->log('           delete ' . $type . ' of package ' . $parent->name . ': relation guid: ' . $guid . ' (id: ' . $value . ')');
                 }
             }
         }
@@ -387,18 +398,18 @@ abstract class Importer
         if (! $relation->guid)
         {
             $_res = $relation->create();
-            echo '           ' . $relation->relation . ': ' . $relation->toname . ' (package id: ' . $relation->to . ') ' . $relation->constraint . ' ' . $relation->version . "\n";
+            $this->log('           ' . $relation->relation . ': ' . $relation->toname . ' (package id: ' . $relation->to . ') ' . $relation->constraint . ' ' . $relation->version);
         }
         else
         {
             $_res = $relation->update();
-            echo '           ' . $relation->relation . ' updated: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version . "\n";
+            $this->log('           ' . $relation->relation . ' updated: ' . $relation->toname . ' ' . $relation->constraint . ' ' . $relation->version);
         }
 
         if ($_res != 'MGD_ERR_OK')
         {
             $_mc = midgard_connection::get_instance();
-            echo 'Error received from midgard_connection: ' . $_mc->get_error_string() . "\n";
+            $this->log('Error received from midgard_connection: ' . $_mc->get_error_string());
         }
     }
 
@@ -781,18 +792,18 @@ abstract class Importer
                 if (   is_object($relation)
                     && $relation->purge())
                 {
-                    echo '              deleted relation: ';
+                    $log = '              deleted relation: ';
                 }
                 else
                 {
-                    echo '              failed to delete relation: ';
+                    $log = '              failed to delete relation: ';
                     $retval = false;
                 }
-                echo  $relation->id . ' (from: ' . $relation->from . ', to: ' . $relation->to .")\n";
+                $this->log($log . $relation->id . ' (from: ' . $relation->from . ', to: ' . $relation->to . ')');
 
                 if (! $retval)
                 {
-                    echo $_mc->get_error_string() . "\n";
+                    $this->log($_mc->get_error_string());
                     break;
                 }
             }
@@ -837,7 +848,7 @@ abstract class Importer
 
                     if ($retval)
                     {
-                        echo '              deleted: ';
+                        $log = '              deleted: ';
                     }
                 }
             }
@@ -845,28 +856,28 @@ abstract class Importer
 
         if (! $retval)
         {
-            echo '              failed to delete package: ';
+            $log = '              failed to delete package: ';
         }
-        echo  $package->filename . ' (' . $package->guid .")\n";
+        $this->log($log . $package->filename . ' (' . $package->guid . ')');
 
         if (! $retval)
         {
             $_mc = midgard_connection::get_instance();
-            echo $_mc->get_error_string() . "\n";
+            $this->log($_mc->get_error_string());
         }
 
         if ($retval)
         {
             $qa_file = $this->config['qa_path'] . '/' . $project_name . '/' . $package->parent . '.txt';
 
-            echo "              looking for QA file: " . $qa_file . "\n";
+            $this->log('              looking for QA file: ' . $qa_file);
 
             if (is_file($qa_file))
             {
                 $ret = unlink($qa_file);
                 if ($ret)
                 {
-                    echo "              removed QA file:     " . $qa_file . "\n";
+                    $this->log('              removed QA file:     ' . $qa_file);
                 }
             }
         }
@@ -886,7 +897,7 @@ abstract class Importer
     {
         $found = false;
 
-        echo "\n     cleanup: " . $repo->name . ' (id: ' . $repo->id . '; ' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ")\n";
+        $this->log("     cleanup: " . $repo->name . ' (id: ' . $repo->id . '; ' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ')');
 
         $storage = new midgard_query_storage('com_meego_package');
 
@@ -916,7 +927,7 @@ abstract class Importer
 
         if (! $found)
         {
-            echo "              no cleanup needed\n";
+            $this->log('              no cleanup needed');
         }
     }
 
