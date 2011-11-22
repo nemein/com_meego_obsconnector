@@ -89,6 +89,9 @@
         <property name="packagesize" use="com_meego_package:size">
             <description>Package score</description>
         </property>
+        <property name="packagehidden" use="com_meego_package:metadata.hidden">
+            <description>Set if the package is meant to be hidden</description>
+        </property>
         <property name="basecategory" use="com_meego_package_basecategory:id">
             <description>Id of the category the package belongs to</description>
         </property>
