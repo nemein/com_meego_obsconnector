@@ -24,6 +24,7 @@
         <property name="guid" use="com_meego_package:guid" />
         <property name="title" use="com_meego_package:title" />
         <property name="name" use="com_meego_package:name" />
+        <property name="version" use="com_meego_package:version" />
 
         <property name="rating" use="com_meego_ratings_rating:rating" />
         <property name="commentid" use="com_meego_ratings_rating:comment" />
