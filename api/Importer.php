@@ -827,57 +827,40 @@ abstract class Importer
         $retval = false;
         //$object = new com_meego_package($guid);
 
-        if (is_object($package))
+        if (   is_object($package)
+            && ! $package->metadata->hidden)
         {
-            // we have to remove all the relations before Midgard is willing
-            // to delete the package
-            $retval = $this->deleteRelations($package->id);
+            // we hide objects instead of deleting them - 2011-11-23; ferenc
+
+            $package->metadata->hidden = true;
+            $retval = $package->update();
 
             if ($retval)
             {
-                if ($package->has_attachments())
-                {
-                    // we have to remove all attachments before Midgard is willing
-                    // to delete the package
-                    $retval = $package->delete_attachments();
-                }
-
-                if ($retval)
-                {
-                    $retval = $package->delete(true);
-
-                    if ($retval)
-                    {
-                        $log = '              deleted: ';
-                    }
-                }
+                $log = '              hidden: ';
             }
-        }
-
-        if (! $retval)
-        {
-            $log = '              failed to delete package: ';
-        }
-        $this->log($log . $package->filename . ' (' . $package->guid . ')');
-
-        if (! $retval)
-        {
-            $_mc = midgard_connection::get_instance();
-            $this->log($_mc->get_error_string());
-        }
-
-        if ($retval)
-        {
-            $qa_file = $this->config['qa_path'] . '/' . $project_name . '/' . $package->parent . '.txt';
-
-            $this->log('              looking for QA file: ' . $qa_file);
-
-            if (is_file($qa_file))
+            else
             {
-                $ret = unlink($qa_file);
-                if ($ret)
+                $log = '              failed to hide package: ';
+                $_mc = midgard_connection::get_instance();
+                $this->log($_mc->get_error_string());
+            }
+
+            $this->log($log . $package->filename . ' (' . $package->guid . ')');
+
+            if ($retval)
+            {
+                $qa_file = $this->config['qa_path'] . '/' . $project_name . '/' . $package->parent . '.txt';
+
+                $this->log('              looking for QA file: ' . $qa_file);
+
+                if (is_file($qa_file))
                 {
-                    $this->log('              removed QA file:     ' . $qa_file);
+                    $ret = unlink($qa_file);
+                    if ($ret)
+                    {
+                        $this->log('              removed QA file:     ' . $qa_file);
+                    }
                 }
             }
         }
@@ -909,6 +892,7 @@ abstract class Importer
 
         $q = new midgard_query_select($storage);
         $q->set_constraint($qc);
+        $q->toggle_readonly(false);
         $q->execute();
 
         $oldpackages = $q->list_objects();
