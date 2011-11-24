@@ -532,6 +532,7 @@ class OBSFetcher extends Importer
             if ($package->guid)
             {
                 $this->log('           update: ' . $package->filename . ' (name: ' . $package->name . ')');
+                $package->metadata->hidden = false;
                 $package->update();
             }
             else
