@@ -874,24 +874,54 @@ abstract class Importer
      *
      * @param object repository object from our database
      * @param array of binaries that are currently part of the OBS repository
+     * @param string if given then only this package will be cleaned up
      *
      */
-    public function cleanPackages($repo = null, $newlist = array())
+    public function cleanPackages($repo = null, $newlist = array(), $specific_package_name = null)
     {
         $found = false;
 
         $this->log("     cleanup: " . $repo->name . ' (id: ' . $repo->id . '; ' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ')');
 
         $storage = new midgard_query_storage('com_meego_package');
+        $q = new midgard_query_select($storage);
 
-        $qc = new midgard_query_constraint(
+        $constraints[] = new midgard_query_constraint(
             new midgard_query_property('repository'),
             '=',
             new midgard_query_value($repo->id)
         );
 
-        $q = new midgard_query_select($storage);
-        $q->set_constraint($qc);
+        if (! is_null($specific_package_name))
+        {
+            $constraints[] = new midgard_query_constraint(
+                new midgard_query_property('name'),
+                '=',
+                new midgard_query_value($specific_package_name)
+            );
+        }
+
+        if (count($constraints) > 1)
+        {
+            $qc = new midgard_query_constraint_group('AND');
+            foreach($constraints as $constraint)
+            {
+                $qc->add_constraint($constraint);
+            }
+        }
+        else
+        {
+            if (isset($constraints[0]))
+            {
+                $qc = $constraints[0];
+            }
+        }
+
+        if (is_object($qc))
+        {
+            $q->set_constraint($qc);
+        }
+
         $q->toggle_readonly(false);
         $q->execute();
 
@@ -911,7 +941,7 @@ abstract class Importer
 
         if (! $found)
         {
-            $this->log('              no cleanup needed');
+            $this->log('              eventually no cleanup needed');
         }
     }
 
