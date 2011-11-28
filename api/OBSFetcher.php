@@ -262,7 +262,7 @@ class OBSFetcher extends Importer
                         if (   ! is_null($specific_package_name)
                             && $package_name != $specific_package_name)
                         {
-                            // this is a no match, so go to next package
+                            // if not cleanup was requested then we can skip non mtaching packages
                             continue;
                         }
 
@@ -270,6 +270,7 @@ class OBSFetcher extends Importer
 
                         try
                         {
+                            $this->log('     -> get binary list via OBS API');
                             $newlist = $this->api->getBuiltBinaryList($project->name, $repo_name, $arch_name, $package_name);
                         }
                         catch (RuntimeException $e)
@@ -283,7 +284,7 @@ class OBSFetcher extends Importer
 
                         if ($cleanonly)
                         {
-                            // only cleanup is requested so we can go to the next package
+                            // no need to go futher if cleanup was requested
                             continue;
                         }
 
@@ -384,30 +385,38 @@ class OBSFetcher extends Importer
 
                                         $handler = $blob->get_handler('wb');
 
-                                        if (! $this->config['wget'])
+                                        if ($handler)
                                         {
-                                            fwrite($handler, stream_get_contents($fp));
-                                            fclose($fp);
+                                            if (! $this->config['wget'])
+                                            {
+                                                fwrite($handler, stream_get_contents($fp));
+                                                fclose($fp);
+                                            }
+                                            else
+                                            {
+                                                fwrite($handler, $fp);
+                                            }
+
+                                            fclose($handler);
+                                            $attachment->update();
+                                            $this->log('           attachment created: ' . $attachment->name . ' (location: blobs/' . $attachment->location . ')');
                                         }
                                         else
                                         {
-                                            fwrite($handler, $fp);
+                                            $this->log('Could not create blob');
                                         }
-
-                                        fclose($handler);
-                                        $attachment->update();
                                     }
                                 }
                             }
                         }
                     }
 
-                    if ($cleanonly)
-                    {
+#                    if ($cleanonly)
+#                    {
                         // now cleanup all the packages from our database
                         // that are not part of this OBS repository
-                        $this->cleanPackages($repo, $fulllist);
-                    }
+                        $this->cleanPackages($repo, $fulllist, $specific_package_name);
+#                    }
                 }
             }
         }
@@ -558,32 +567,40 @@ class OBSFetcher extends Importer
                     {
                         $blob = new midgard_blob($attachment);
 
-                        $handler = $blob->get_handler('wb');
+                        $handler = $blob->get_handler('wb+');
 
-                        if (! $this->config['wget'])
+                        if ($handler)
                         {
-                            $ymp = stream_get_contents($fp);
+                            if (! $this->config['wget'])
+                            {
+                                $ymp = stream_get_contents($fp);
+                            }
+                            else
+                            {
+                                $ymp = $fp;
+                            }
+
+                            // replace name with the package name
+                            $ymp = self::replace_name_with_packagename($ymp, $package->name);
+
+                            // write the attachment to the file system
+                            fwrite($handler, $ymp);
+
+                            if (! $this->config['wget'])
+                            {
+                                fclose($fp);
+                            }
+
+                            // close the attachment's handler
+                            fclose($handler);
+
+                            $attachment->update();
+                            $this->log('           attachment created: ' . $attachment->name . ' (location: blobs/' . $attachment->location . ')');
                         }
                         else
                         {
-                            $ymp = $fp;
+                            $this->log('Could not create attachment');
                         }
-
-                        // replace name with the package name
-                        $ymp = self::replace_name_with_packagename($ymp, $package->name);
-
-                        // write the attachment to the file system
-                        fwrite($handler, $ymp);
-
-                        if (! $this->config['wget'])
-                        {
-                            fclose($fp);
-                        }
-
-                        // close the attachment's handler
-                        fclose($handler);
-
-                        $attachment->update();
                     }
                     else
                     {
@@ -595,10 +612,17 @@ class OBSFetcher extends Importer
                             if ($attachment->name == $package_name . "_install.ymp")
                             {
                                 $blob = new midgard_blob($attachment);
-                                $handler = $blob->get_handler('rb+');
-                                $ymp = self::replace_name_with_packagename($blob->read_content(), $package->name);
-                                fwrite($handler, $ymp);
-                                fclose($handler);
+                                $handler = $blob->get_handler('wb');
+                                if ($handler)
+                                {
+                                    $content = $blob->read_content();
+                                    if ($content)
+                                    {
+                                        $ymp = self::replace_name_with_packagename($content, $package->name);
+                                    }
+                                    fwrite($handler, $ymp);
+                                    fclose($handler);
+                                }
                                 break;
                             }
                         }
@@ -615,7 +639,7 @@ class OBSFetcher extends Importer
                     $package->update();
                 }
             }
-            catch (RuntimeException $e)
+                catch (RuntimeException $e)
             {
                 $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
             }
