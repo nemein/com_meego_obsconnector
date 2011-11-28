@@ -881,7 +881,14 @@ abstract class Importer
     {
         $found = false;
 
-        $this->log("     cleanup: " . $repo->name . ' (id: ' . $repo->id . '; ' . $repo->os . ' ' . $repo->osversion . ', ' . $repo->osgroup . ', ' . $repo->osux . ')');
+        if ($specific_package_name)
+        {
+            $this->log('        -> cleanup package: ' . $specific_package_name . ' in repo: ' . $repo->name);
+        }
+        else
+        {
+            $this->log('     -> cleanup repo: ' . $repo->name . ' (id: ' . $repo->id . '; OS: ' . $repo->os . ', OS version ID: ' . $repo->osversion . ', OS group: ' . $repo->osgroup . ', UX: ' . $repo->osux . ')');
+        }
 
         $storage = new midgard_query_storage('com_meego_package');
         $q = new midgard_query_select($storage);

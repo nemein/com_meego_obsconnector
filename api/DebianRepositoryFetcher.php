@@ -221,7 +221,7 @@ class DebianRepositoryFetcher extends Importer
                             }
                             catch (RuntimeException $e)
                             {
-                                $this->log("\n         [EXCEPTION: " . $e->getMessage() . "]\n");
+                                $this->log('         [EXCEPTION] ' . $e->getMessage());
                             }
 
                             foreach ($image_names as $name)
@@ -232,7 +232,7 @@ class DebianRepositoryFetcher extends Importer
                                 }
                                 catch (RuntimeException $e)
                                 {
-                                    $this->log("\n         [EXCEPTION: " . $e->getMessage() . "]\n");
+                                    $this->log('         [EXCEPTION] ' . $e->getMessage());
                                 }
 
                                 if ($fp)

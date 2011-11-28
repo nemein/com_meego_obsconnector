@@ -55,7 +55,7 @@ class OBSFetcher extends Importer
         }
         catch (RuntimeException $e)
         {
-            $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
+            $this->log('         [EXCEPTION] ' . $e->getMessage());
         }
 
         // iterate through each project to get all its repositories and
@@ -146,7 +146,7 @@ class OBSFetcher extends Importer
         if ($project->id)
         {
             // get all repositories this project has published
-            $this->log('Repositories in ' . $project->name . ':');
+            $this->log('Proceed with repositories of project: ' . $project->name);
 
             try
             {
@@ -154,13 +154,13 @@ class OBSFetcher extends Importer
             }
             catch (RuntimeException $e)
             {
-                $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
+                $this->log('[EXCEPTION] ' . $e->getMessage());
             }
 
             if (! count($repositories))
             {
                 // clean on local records
-                $this->log('    TODO: No repositories in OBS. Cleaning up local ones.');
+                $this->log('[TODO] No repositories in OBS. Cleaning up local ones.');
                 exit;
             }
 
@@ -168,7 +168,7 @@ class OBSFetcher extends Importer
             // and dig out the packages
             foreach ($repositories as $repo_name)
             {
-                $this->log($repo_name);
+                $this->log('  ' . $repo_name);
 
                 // work on allowed OSes only
                 $repo->os = $project_meta['repositories'][$repo_name]['os'];
@@ -176,7 +176,7 @@ class OBSFetcher extends Importer
                 if (   is_array($this->config['os_map'])
                     && array_search($repo->os, $this->config['os_map']) === false)
                 {
-                    $this->log('    skipped due to wrong OS: ' . $repo->os);
+                    $this->log('  skipped due to wrong OS: ' . $repo->os);
                     continue;
                 }
 
@@ -186,7 +186,7 @@ class OBSFetcher extends Importer
                 }
                 catch (RuntimeException $e)
                 {
-                    $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
+                    $this->log('  [EXCEPTION] ' . $e->getMessage());
                 }
 
                 if ( ! count($architectures) )
@@ -223,7 +223,7 @@ class OBSFetcher extends Importer
                     }
                     catch (RuntimeException $e)
                     {
-                        $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
+                        $this->log('     [EXCEPTION] ' . $e->getMessage());
                     }
 
                     if ( ! count($builtpackages))
@@ -266,16 +266,15 @@ class OBSFetcher extends Importer
                             continue;
                         }
 
-                        $this->log('     -> package #' . ++$this->package_counter . ': ' . $package_name);
+                        $this->log('     -> package #' . ++$this->package_counter . ' ' . $package_name . ': get binary list');
 
                         try
                         {
-                            $this->log('     -> get binary list via OBS API');
                             $newlist = $this->api->getBuiltBinaryList($project->name, $repo_name, $arch_name, $package_name);
                         }
                         catch (RuntimeException $e)
                         {
-                            $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
+                            $this->log('        [EXCEPTION] ' . $e->getMessage());
                         }
 
                         // this list contains all binaries built for all packages in that repo
@@ -360,7 +359,7 @@ class OBSFetcher extends Importer
                             }
                             catch (RuntimeException $e)
                             {
-                                $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
+                                $this->log('         [EXCEPTION] ' . $e->getMessage());
                             }
 
                             foreach ($image_names as $name)
@@ -372,7 +371,7 @@ class OBSFetcher extends Importer
                                 }
                                 catch (RuntimeException $e)
                                 {
-                                    $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
+                                    $this->log('         [EXCEPTION] ' . $e->getMessage());
                                 }
 
                                 if ($fp)
@@ -442,7 +441,7 @@ class OBSFetcher extends Importer
             }
             catch (RuntimeException $e)
             {
-                $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
+                $this->log('         [EXCEPTION] ' . $e->getMessage());
             }
         }
         else
@@ -517,7 +516,7 @@ class OBSFetcher extends Importer
             }
             catch (RuntimeException $e)
             {
-                $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
+                $this->log('         [EXCEPTION] ' . $e->getMessage());
 
                 // if there was a problem during xray (with code 999)
                 // then it almost certainly means that the package no longer exists in the repository
@@ -567,7 +566,7 @@ class OBSFetcher extends Importer
                     {
                         $blob = new midgard_blob($attachment);
 
-                        $handler = $blob->get_handler('wb+');
+                        $handler = $blob->get_handler('wb');
 
                         if ($handler)
                         {
@@ -641,7 +640,7 @@ class OBSFetcher extends Importer
             }
                 catch (RuntimeException $e)
             {
-                $this->log('         [EXCEPTION: ' . $e->getMessage() . ']');
+                $this->log('         [EXCEPTION] ' . $e->getMessage());
             }
 
             // get the roles and create the necessary role objects
