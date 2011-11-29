@@ -423,7 +423,7 @@ class OBSFetcher extends Importer
 
                                 if ($skip)
                                 {
-                                    $this->log('           image did not change: ' . $name . ', skip it');
+                                    $this->log('           image: ' . $name . ' did not change, skip it');
                                     continue;
                                 }
 
@@ -440,6 +440,7 @@ class OBSFetcher extends Importer
 
                                 if ($fp)
                                 {
+                                    $act = 'creation';
                                     $attachment = $package->create_attachment($name, $name, "image/png");
 
                                     if (! $attachment)
@@ -452,6 +453,7 @@ class OBSFetcher extends Importer
                                             && count($attachments))
                                         {
                                             $attachment = $attachments[0];
+                                            $act = 'update';
                                         }
                                     }
 
@@ -474,8 +476,16 @@ class OBSFetcher extends Importer
                                             }
 
                                             fclose($handler);
-                                            $attachment->update();
-                                            $this->log('           attachment done: ' . $attachment->name . ' (location: blobs/' . $attachment->location . ')');
+                                            if ($attachment->update())
+                                            {
+                                                // act is either creation or update; see a few lines above
+                                                $this->log('           attachment ' . $act . ' succeeded: ' . $attachment->name . ' (location: blobs/' . $attachment->location . ')');
+                                            }
+                                            else
+                                            {
+                                                // it should not happen
+                                                $this->log('           attachment ' . $act . ' failed: ' . $attachment->name . ' (location: blobs/' . $attachment->location . ')');
+                                            }
                                         }
                                         else
                                         {
@@ -616,14 +626,20 @@ class OBSFetcher extends Importer
             // call the parent
             if ($package->guid)
             {
-                $this->log('           update: ' . $package->filename . ' (name: ' . $package->name . ')');
+                $this->log('           update: ' . $package->filename . ' (name: ' . $package->name . ', guid: ' . $package->guid . ')');
                 $package->metadata->hidden = false;
                 $package->update();
             }
             else
             {
-                $this->log('           create: ' . $package->filename . ' (name: ' . $package->name . ')');
-                $package->create();
+                if ($package->create())
+                {
+                    $this->log('           create: ' . $package->filename . ' (name: ' . $package->name . ', guid: ' . $package->guid . ')');
+                }
+                else
+                {
+                    $this->log('           failed to create: ' . $package->filename . ' (name: ' . $package->name . ')');
+                }
             }
 
             try
