@@ -948,7 +948,7 @@ abstract class Importer
 
         if (! $found)
         {
-            $this->log('              eventually no cleanup needed');
+            $this->log('           no cleanup was necessary');
         }
     }
 
