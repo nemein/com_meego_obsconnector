@@ -249,7 +249,7 @@ class OBSFetcher extends Importer
                                 $log = '     create: ';
                                 $repo->create();
                             }
-                            $this->log($log . $repo->name . ' (id: ' . $repo->id . '; OS: ' . $repo->os . ', OS id: ' . $repo->osversion . ', ' . $repo->osgroup . ', UX id: ' . $repo->osux . ', OS arch: ' . $repo->arch . ')');
+                            $this->log($log . $repo->name . ' (id: ' . $repo->id . '; OS: ' . $repo->os . ', OS version id: ' . $repo->osversion . ', OS group: ' . $repo->osgroup . ', UX id: ' . $repo->osux . ', OS arch: ' . $repo->arch . ')');
                         }
                     }
 
@@ -337,13 +337,17 @@ class OBSFetcher extends Importer
 
                             try
                             {
-                                $image_names = array_filter
-                                (
-                                    $this->api->getPackageSourceFiles($project->name, $package_name),
+                                $this->log('           fetch image names for ' . $package_name);
 
-                                    function($name)
+                                $filelist = $this->api->getPackageSourceFiles($project->name, $package_name);
+
+                                $images = array_filter
+                                (
+                                    $filelist,
+                                    function($item)
                                     {
                                         $retval = false;
+                                        $name = $item['name'];
                                         $_icon_marker = 'icon.png';
                                         $_screenshot_marker = 'screenshot.png';
 
@@ -356,17 +360,77 @@ class OBSFetcher extends Importer
                                         return $retval;
                                     }
                                 );
+                                $this->log('           received image names for ' . $package_name . ' (count: ' . count($images) . ')');
                             }
                             catch (RuntimeException $e)
                             {
                                 $this->log('         [EXCEPTION] ' . $e->getMessage());
                             }
 
-                            foreach ($image_names as $name)
+                            // collect attachments
+                            $pngattachments = $package->find_attachments(array('mimetype' => 'image/png'));
+                            $keptattachments = array();
+
+                            // delete ones that are no longer needed
+                            foreach ($pngattachments as $attachment)
                             {
+                                $delete = true;
+                                foreach ($images as $image)
+                                {
+                                    if ($image['name'] == $attachment->name)
+                                    {
+                                        $delete = false;
+                                    }
+                                }
+
+                                if ($delete)
+                                {
+                                    $this->log('           attachment no longer needed: ' . $attachment->name . ' (guid: ' . $attachment->guid . ')');
+                                    // TODO: this segfaults midgard
+                                    // $package->purge_attachments(array('guid' => $attachment->guid), true);
+                                    $package->delete_attachments(array('guid' => $attachment->guid));
+                                }
+                                else
+                                {
+                                    #$this->log('           attachment kept: ' . $attachment->name . ' (guid: ' . $attachment->guid . ')');
+                                    $keptattachments[] = array(
+                                        'name' => $attachment->name,
+                                        'mtime' => $attachment->metadata->revised->getTimestamp()
+                                    );
+                                }
+                            }
+
+                            // compare images with the current ones and create new or changed ones
+                            foreach ($images as $image)
+                            {
+                                $skip = false;
+                                $name = $image['name'];
+                                $size = $image['name'];
+                                $mtime = $image['mtime'];
+
+                                foreach ($keptattachments as $attachment)
+                                {
+                                    #echo 'compare: ' . $attachment['name'] . ' (' . $attachment['mtime'] . ') vs. ' . $name . ' (' . $mtime . ')' . "\n";
+                                    if ($attachment['name'] !== $name)
+                                    {
+                                        continue;
+                                    }
+                                    if ($attachment['mtime'] >= $mtime)
+                                    {
+                                        $skip = true;
+                                    }
+                                }
+
+                                if ($skip)
+                                {
+                                    $this->log('           image did not change: ' . $name . ', skip it');
+                                    continue;
+                                }
+
                                 try
                                 {
-                                    //$fp is either a stream, or a string if wget is used to fecth content
+                                    $this->log('           fetch image: ' . $name);
+                                    //$fp is either a stream, or a string if wget is used to fetch content
                                     $fp = $this->api->getPackageSourceFile($project->name, $package_name, $name);
                                 }
                                 catch (RuntimeException $e)
@@ -377,6 +441,19 @@ class OBSFetcher extends Importer
                                 if ($fp)
                                 {
                                     $attachment = $package->create_attachment($name, $name, "image/png");
+
+                                    if (! $attachment)
+                                    {
+                                        // attachment with this name may already exist
+                                        // try to fetch it
+                                        $this->log('           attachment: ' . $name . ' might exists; try update');
+                                        $attachments = $package->find_attachments(array('name' => $name, 'mimetype' => "image/png"));
+                                        if (   is_array($attachments)
+                                            && count($attachments))
+                                        {
+                                            $attachment = $attachments[0];
+                                        }
+                                    }
 
                                     if ($attachment)
                                     {
@@ -398,7 +475,7 @@ class OBSFetcher extends Importer
 
                                             fclose($handler);
                                             $attachment->update();
-                                            $this->log('           attachment created: ' . $attachment->name . ' (location: blobs/' . $attachment->location . ')');
+                                            $this->log('           attachment done: ' . $attachment->name . ' (location: blobs/' . $attachment->location . ')');
                                         }
                                         else
                                         {
@@ -579,8 +656,16 @@ class OBSFetcher extends Importer
                                 $ymp = $fp;
                             }
 
+                            $origymp = $ymp;
+
                             // replace name with the package name
                             $ymp = self::replace_name_with_packagename($ymp, $package->name);
+
+                            if (! strlen($ymp))
+                            {
+                                $this->log('           attempt to update package name in: ' . $attachment->name . ' would result in 0 byte long file; rollback, location: blobs/' . $attachment->location);
+                                $ymp = $origymp;
+                            }
 
                             // write the attachment to the file system
                             fwrite($handler, $ymp);
@@ -611,16 +696,29 @@ class OBSFetcher extends Importer
                             if ($attachment->name == $package_name . "_install.ymp")
                             {
                                 $blob = new midgard_blob($attachment);
-                                $handler = $blob->get_handler('wb');
+                                $handler = $blob->get_handler('rb+');
                                 if ($handler)
                                 {
                                     $content = $blob->read_content();
-                                    if ($content)
+                                    $ymp = $content;
+
+                                    if (strlen($content))
                                     {
                                         $ymp = self::replace_name_with_packagename($content, $package->name);
                                     }
+
+                                    if (! strlen($ymp))
+                                    {
+                                        $this->log('           attempt to update package name in: ' . $attachment->name . ' would result in 0 byte long file; rollback, location: blobs/' . $attachment->location);
+                                        $ymp = $content;
+                                    }
+
                                     fwrite($handler, $ymp);
                                     fclose($handler);
+                                }
+                                else
+                                {
+                                    $this->log('           failed to update attachment: ' . $attachment->name . ', location: blobs/' . $attachment->location);
                                 }
                                 break;
                             }
@@ -669,16 +767,18 @@ class OBSFetcher extends Importer
      */
     public function replace_name_with_packagename($ymp, $packagename)
     {
-        $retval = preg_replace('|\<software\>\s*\<item\>\s*\<name\>[^<].*\<\/name\>|', "<software>\n<item>\n<name>" . $packagename . "</name>", $ymp);
+        $this->log('           attempt to update package name in ymp file');
+
+        $retval = preg_replace('|\<software\>\s*\<item\>\s*\<name\>[^<].*\<\/name\>|', "<software>\n      <item>\n        <name>" . $packagename . "</name>", $ymp);
         if (! $retval)
         {
             $retval = $ymp;
-            $this->log('           update ymp file with ' . $packagename . ' failed');
+            $this->log('           updating ymp file with ' . $packagename . ' failed');
 
         }
         else
         {
-            $this->log('           update ymp file with ' . $packagename . ' succeeded');
+            $this->log('           updating ymp file with ' . $packagename . ' succeeded');
         }
         return $retval;
     }
