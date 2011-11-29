@@ -65,7 +65,7 @@ class com_meego_obsconnector_API
     public function getPackageSourceFiles($project, $package)
     {
         $txt = $this->http->get('/source/' . $project . '/' . $package);
-        return $this->parseDirectoryXML($txt);
+        return $this->parseFileListXML($txt);
     }
 
     public function putPackageSourceFile($project, $package, $filename, $stream_or_string)
@@ -246,8 +246,37 @@ class com_meego_obsconnector_API
         $retval = array();
         if (count($_xml->entry))
         {
-            foreach ($_xml->entry as $entry) {
+            foreach ($_xml->entry as $entry)
+            {
                 $retval[] = strval($entry['name']);
+            }
+        }
+        return $retval;
+    }
+
+    /**
+     * Same as parseDirectoryXML, but it also returns other attributes
+     *
+     * @param $xml xml string
+     *
+     * @return array
+     */
+    protected function parseFileListXML($xml)
+    {
+        $_xml = simplexml_load_string($xml);
+
+        $retval = array();
+        if (count($_xml->entry))
+        {
+            foreach ($_xml->entry as $entry)
+            {
+                $file = array(
+                    'name' => strval($entry['name']),
+                    'md5' => strval($entry['md5']),
+                    'size' => strval($entry['size']),
+                    'mtime' => strval($entry['mtime'])
+                );
+                $retval[] = $file;
             }
         }
         return $retval;
