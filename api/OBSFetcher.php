@@ -558,7 +558,22 @@ class OBSFetcher extends Importer
             $package->title = $extinfo->title;
             $package->parent = $package_name;
             $package->version = $extinfo->version;
-            $package->summary = $extinfo->summary;
+
+            $summary_max_length = 100;
+
+            if (array_key_exists('summary_max_length', $this->config))
+            {
+                $summary_max_length = $this->config['summary_max_length'];
+            }
+            if (strlen($extinfo->summary))
+            {
+                $package->summary = $this->generateAbstract($extinfo->summary, $summary_max_length);
+            }
+            else
+            {
+                $package->summary = $this->generateAbstract($extinfo->description, $summary_max_length);
+            }
+
             $package->description = $extinfo->description;
 
             // if the package is a source package then the downloadurl is slightly different
