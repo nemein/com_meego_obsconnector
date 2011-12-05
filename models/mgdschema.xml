@@ -212,7 +212,7 @@
         <property name="ratings" type="integer">
             <description>Number of ratings for this package in this repository</description>
         </property>
-        <property name="ratingvalue" type="integer">
+        <property name="ratingvalue" type="float">
             <description>Average value of ratings for this package in this repository</description>
         </property>
         <property name="comments" type="integer">
