@@ -364,13 +364,14 @@ abstract class Importer
 
         $q = new midgard_query_select($storage);
         $q->set_constraint($qc);
+        $q->toggle_readonly(false);
         $q->execute();
 
         $results = $q->list_objects();
 
         if (count($results))
         {
-            $relation = new com_meego_package_relation($results[0]->guid);
+            $relation = array_shift($results);
         }
         else
         {
@@ -435,13 +436,14 @@ abstract class Importer
 
         $q = new midgard_query_select($storage);
         $q->set_constraint($qc);
+        $q->toggle_readonly(false);
         $q->execute();
 
         $results = $q->list_objects();
 
         if (count($results))
         {
-            $project = new com_meego_project($results[0]->guid);
+            $project = array_shift($results);
         }
         else
         {
@@ -485,13 +487,14 @@ abstract class Importer
 
         $q = new midgard_query_select($storage);
         $q->set_constraint($qc);
+        $q->toggle_readonly(false);
         $q->execute();
 
         $results = $q->list_objects();
 
         if (count($results))
         {
-            $repository = new com_meego_repository($results[0]->guid);
+            $repository = array_shift($results);
         }
         else
         {
@@ -528,17 +531,35 @@ abstract class Importer
                 '=',
                 new midgard_query_value($repository)
             ));
+            $qc->add_constraint(new midgard_query_constraint(
+                new midgard_query_property('metadata.hidden'),
+                '=',
+                new midgard_query_value(0)
+            ));
         }
 
         $q = new midgard_query_select($storage);
         $q->set_constraint($qc);
+        $q->toggle_readonly(false);
         $q->execute();
 
         $results = $q->list_objects();
 
         if (count($results))
         {
-            $package = new com_meego_package($results[0]->guid);
+            // one repo should only have 1 instance from the same filename (as it also has the version number)
+            $package = array_shift($results);
+
+            // we set all other packages hidden
+            foreach($results as $result)
+            {
+                $result->metadata->hidden = true;
+                $ret = $result->update();
+                if ($ret)
+                {
+                    $this->log('           extra package instance ' . $result->guid . ' set to hidden');
+                }
+            }
         }
         else
         {
@@ -1083,6 +1104,37 @@ abstract class Importer
             unset($dummy_session);
         */
         return $user;
+    }
+
+    /**
+     * Generate a short summary from a longer text
+     * Implemented by Henri Bergius
+     * @param string original string
+     * @param int max lengths in bytes
+     * @return string the new string
+     */
+    public function generateAbstract($string, $maxlength = 100)
+    {
+        $string = strip_tags($string);
+
+        if (mb_strlen($string) <= $maxlength)
+        {
+            return $string;
+        }
+
+        $buffer = $maxlength * 0.1;
+        $string = substr($string, 0, $maxlength + $buffer);
+
+        $last_period = mb_strrpos($string, '.');
+        if (   $last_period !== false
+            && $last_period > ($maxlength * 0.8))
+        {
+            // Found a period in the last 20% of string, go with it.
+            return mb_substr($string, 0, $last_period + 1);
+        }
+
+        $last_space = mb_strrpos($string, ' ');
+        return mb_substr($string, 0, $last_space);
     }
 }
 ?>
