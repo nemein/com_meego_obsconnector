@@ -28,14 +28,18 @@ abstract class Importer
     abstract public function go($project_name = null, $specific_package_name = null, $cleanonly = false);
 
     /**
-     * Logging
+     * Logging to STDOUT
      *
      * @param string the string to log
      */
     public function log($message)
     {
-        $message = date('Y-m-d H:i:s') . ' ' . $message . "\n";
-        echo $message;
+        if (   array_key_exists('importer_log', $this->config)
+            && $this->config['importer_log'] == 1)
+        {
+            $message = date('Y-m-d H:i:s') . ' ' . $message . "\n";
+            echo $message;
+        }
     }
 
     /**

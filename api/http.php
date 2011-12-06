@@ -2,6 +2,7 @@
 
 class com_meego_obsconnector_HTTP
 {
+    private $config = null;
     private $prefix = null;
     private $protocol = 'http';
 
@@ -19,6 +20,8 @@ class com_meego_obsconnector_HTTP
 
         $this->wget = $wget;
         $this->wget_options = $wget_options;
+
+        $this->config = parse_ini_file(dirname(__FILE__) . '/config.ini');
     }
 
     public function setAuthentication($user, $password)
@@ -75,6 +78,9 @@ class com_meego_obsconnector_HTTP
             // failed to fetch content
             throw new RuntimeException("Failed to fetch " . $url_to_fetch, 990);
         }
+
+        $this->log('request : ' . $url_to_fetch);
+        $this->log('response: ' . strlen($content) . ' bytes');
         return $content;
     }
 
@@ -208,5 +214,20 @@ class com_meego_obsconnector_HTTP
             }
         }
         return $location;
+    }
+
+    /**
+     * Logging to STDOUT
+     *
+     * @param string the string to log
+     */
+    public function log($message)
+    {
+        if (   array_key_exists('api_log', $this->config)
+            && $this->config['api_log'] == 1)
+        {
+            $message = date('Y-m-d H:i:s') . ' API ' . $message . "\n";
+            echo $message;
+        }
     }
 }
