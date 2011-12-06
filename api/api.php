@@ -46,13 +46,13 @@ class com_meego_obsconnector_API
 
     public function getProjectMeta($name)
     {
-        $txt = $this->http->get('/source/'.$name.'/_meta');
+        $txt = $this->http->get('/source/' . $name . '/_meta');
         return $this->parseProjectXML($txt);
     }
 
     public function getSourcePackages($project)
     {
-        $txt = $this->http->get('/source/'.$project);
+        $txt = $this->http->get('/source/' . $project);
         return $this->parseDirectoryXML($txt);
     }
 
