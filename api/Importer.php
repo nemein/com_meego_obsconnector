@@ -918,42 +918,41 @@ abstract class Importer
         $storage = new midgard_query_storage('com_meego_package');
         $q = new midgard_query_select($storage);
 
+        $qc = new midgard_query_constraint_group('AND');
+
         $constraints[] = new midgard_query_constraint(
             new midgard_query_property('repository'),
             '=',
             new midgard_query_value($repo->id)
         );
+        $constraints[] = new midgard_query_constraint(
+            new midgard_query_property('metadata.hidden'),
+            '=',
+            new midgard_query_value(0)
+        );
 
         if (! is_null($specific_package_name))
         {
-            $constraints[] = new midgard_query_constraint(
+            $qc1 = new midgard_query_constraint_group('OR');
+            $qc1->add_constraint(new midgard_query_constraint(
                 new midgard_query_property('name'),
                 '=',
                 new midgard_query_value($specific_package_name)
-            );
+            ));
+            $qc1->add_constraint(new midgard_query_constraint(
+                new midgard_query_property('parent'),
+                '=',
+                new midgard_query_value($specific_package_name)
+            ));
+            $constraints[] = $qc1;
         }
 
-        if (count($constraints) > 1)
+        foreach($constraints as $constraint)
         {
-            $qc = new midgard_query_constraint_group('AND');
-            foreach($constraints as $constraint)
-            {
-                $qc->add_constraint($constraint);
-            }
-        }
-        else
-        {
-            if (isset($constraints[0]))
-            {
-                $qc = $constraints[0];
-            }
+            $qc->add_constraint($constraint);
         }
 
-        if (is_object($qc))
-        {
-            $q->set_constraint($qc);
-        }
-
+        $q->set_constraint($qc);
         $q->toggle_readonly(false);
         $q->execute();
 
