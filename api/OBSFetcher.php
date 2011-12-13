@@ -636,12 +636,16 @@ class OBSFetcher extends Importer
                 $package->license = $this->getLicense($xray->license, '');
                 $package->homepageurl = $xray->url;
                 $package->category = $this->getCategory($xray->group);
+                if (isset($xray->title))
+                {
+                    $package->title = $xray->title;
+                }
             }
 
             // call the parent
             if ($package->guid)
             {
-                $this->log('           update: ' . $package->filename . ' (name: ' . $package->name . ', guid: ' . $package->guid . ')');
+                $this->log('           update: ' . $package->filename . ' (title: ' . $package->title . ', guid: ' . $package->guid . ')');
                 $package->metadata->hidden = false;
                 $package->update();
             }
@@ -649,11 +653,11 @@ class OBSFetcher extends Importer
             {
                 if ($package->create())
                 {
-                    $this->log('           create: ' . $package->filename . ' (name: ' . $package->name . ', guid: ' . $package->guid . ')');
+                    $this->log('           create: ' . $package->filename . ' (title: ' . $package->title . ', guid: ' . $package->guid . ')');
                 }
                 else
                 {
-                    $this->log('           failed to create: ' . $package->filename . ' (name: ' . $package->name . ')');
+                    $this->log('           failed to create: ' . $package->filename . ' (title: ' . $package->title . ')');
                 }
             }
 

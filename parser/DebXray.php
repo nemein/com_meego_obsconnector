@@ -99,7 +99,8 @@ class DebXray
         (
             'homepage' => 'url',
             'section' => 'group',
-            'architecture' => 'arch'
+            'architecture' => 'arch',
+            'Maemo-Display-Name' => 'title'
         );
 
         foreach ($infoneeded as $key => $map)
