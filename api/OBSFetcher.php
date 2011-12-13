@@ -636,7 +636,8 @@ class OBSFetcher extends Importer
                 $package->license = $this->getLicense($xray->license, '');
                 $package->homepageurl = $xray->url;
                 $package->category = $this->getCategory($xray->group);
-                if (isset($xray->title))
+                if (   isset($xray->title)
+                    && strlen($xray->title) )
                 {
                     $package->title = $xray->title;
                 }
