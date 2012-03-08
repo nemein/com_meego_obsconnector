@@ -1062,8 +1062,8 @@ abstract class Importer
         # create the person object
         $person = new midgard_person();
 
-        $person->firstname = 'imported';
-        $person->lastname = 'user';
+        $person->firstname = $login;
+        $person->lastname = $login;
 
         if ( ! $person->create() )
         {
